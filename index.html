@@ -5,7 +5,7 @@
 <title>Thiên Nam • Bang Chiến Strategy</title>
 <style>
 :root{--bg:#05070a;--panel:#0d1218f2;--panel2:#111923;--gold:#d8b36a;--gold2:#ffe1a0;--red:#c64b43;--blue:#4c8cff;--green:#54c98a;--text:#f4f0e8;--muted:#929ba7;--line:#303844;--discord:#5865f2}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 50% 0,#15130d,#05070a 48%);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}.bg{position:fixed;inset:0;background:linear-gradient(#05070ad9,#05070af7),url('background-thien-nam.webp') center/cover;filter:saturate(.55);z-index:-2}.bg:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 15%,transparent,#000 85%)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 50% 0,#15130d,#05070a 48%);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}.bg{position:fixed;inset:0;background:linear-gradient(#05070ad9,#05070af7);filter:saturate(.55);z-index:-2}.bg:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 15%,transparent,#000 85%)}
 header{height:70px;position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#07090df4;border-bottom:1px solid #4b3b22;backdrop-filter:blur(14px)}.brand{display:flex;align-items:center;gap:11px}.crest{width:42px;height:42px;border:1px solid #9c7737;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#3b2b12,#090c11);font-size:20px}.brand b{font:900 22px Georgia,serif;letter-spacing:2px;color:var(--gold2)}nav{display:flex;gap:22px}nav a{color:#c4c9d0;text-decoration:none}nav a:hover{color:var(--gold2)}.discord{background:var(--discord);color:#fff!important;padding:9px 14px;border-radius:8px;font-weight:800;text-decoration:none}
 main{width:min(1500px,96%);margin:auto;padding:35px 0 65px}.hero{text-align:center;max-width:1000px;margin:auto auto 25px}.kicker{color:var(--gold);letter-spacing:4px;font-size:11px;font-weight:900}.hero h1{font:900 clamp(38px,6vw,66px)/.95 Georgia,serif;color:var(--gold2);margin:10px 0;text-shadow:0 8px 35px #000}.hero h2{font:italic 700 20px Georgia,serif;margin:0}.hero p{color:#b9bec7;max-width:800px;margin:10px auto}
 .card{background:linear-gradient(180deg,#10161ff7,#080c11f7);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 25px 90px #000b}.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.section-title h2,.card h2{margin:0;color:var(--gold2);font:800 22px Georgia,serif}.sub{color:var(--muted);margin:4px 0 15px}.tag{font-size:11px;padding:4px 9px;border:1px solid #604b2b;border-radius:99px;color:#e7c87e}.layout{display:grid;grid-template-columns:230px minmax(0,1fr) 230px;gap:0;align-items:start}.side{display:contents}.side>.card:first-child{grid-column:3;grid-row:1;align-self:start;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow:auto;padding:12px;margin-left:0;border-radius:0 14px 14px 0}.side>.card:nth-child(2){grid-column:1;grid-row:1;align-self:start;position:sticky;top:84px;padding:12px;margin-right:0;border-radius:14px 0 0 14px}.side>.card:nth-child(3){grid-column:1;grid-row:2;align-self:start;position:sticky;top:84px;padding:12px}.map-viewport{height:min(78vh,820px);overflow:hidden}.map-stage{transform:translate(-50%,-50%) scale(1)!important;cursor:default}.zoom-readout,#zoomIn,#zoomOut{display:none}.tools{display:flex;flex-direction:column;gap:8px}.tools button{width:100%;2,1fr);gap:5px}.side .section-title h2,.side .card h2{font-size:17px}.side .sub{font-size:11px;margin:3px 0 10px}.side .btn{padding:7px 6px;font-size:10px}.side .btn.small{padding:6px 5px;font-size:10px}.side .filters{gap:6px}.side .field input,.side .field select,.side input,.side select{padding:7px 8px;font-size:11px}.members{gap:5px;max-height:calc(100vh - 265px)}.member{padding:7px;font-size:11px}.member small{font-size:9px}.role{font-size:9px;padding:1px 5px}.side .actions{gap:5px}.btn{border:1px solid #4a4f58;background:#11161d;color:#d9dce2;border-radius:8px;padding:9px 10px;font-weight:800;cursor:pointer}.btn:hover{border-color:#88672f}.btn.gold{background:linear-gradient(#e6c67f,#93682c);color:#080a0c;border-color:#f0d18f}.btn.blue{background:#18223b;border-color:#3c63aa}.btn.red{background:#311613;border-color:#873d36}.btn.green{background:#11281d;border-color:#347d57}.btn.discord{background:var(--discord);border-color:#7782ff}.btn.small{padding:7px 8px;font-size:12px}
@@ -283,10 +283,11 @@ main { width:100% !important; max-width:none !important; margin:0 !important; pa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const DISCORD_INVITE='https://discord.gg/vzc7PFxAv';
-const SUPABASE_URL='https://fjaqtmamsfhtkcscmrjl.supabase.co';
-const SUPABASE_ANON_KEY='sb_publishable_BmorrSJx9732vjK6S1oj1Q_2WLI1APN';
-const SUPABASE_CONFIGURED=SUPABASE_URL.startsWith('https://')&&!SUPABASE_URL.includes('PASTE_')&&!SUPABASE_ANON_KEY.includes('PASTE_');
-const db=SUPABASE_CONFIGURED?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+const SUPABASE_URL='PASTE_SUPABASE_PROJECT_URL_HERE';
+const SUPABASE_ANON_KEY='PASTE_SUPABASE_ANON_KEY_HERE';
+const SUPABASE_BASE_URL=SUPABASE_URL.replace(/\/+$/,'').replace(/(?:\/rest\/v1)+$/,'');
+const SUPABASE_CONFIGURED=SUPABASE_BASE_URL.startsWith('https://')&&!SUPABASE_BASE_URL.includes('PASTE_')&&!SUPABASE_ANON_KEY.includes('PASTE_');
+const db=SUPABASE_CONFIGURED?window.supabase.createClient(SUPABASE_BASE_URL,SUPABASE_ANON_KEY):null;
 const DEFAULT_TEAMS=[{id:'cong-top',name:'CÔNG • TOP',type:'CÔNG',lane:'TOP',icon:'⚔️',slots:5},{id:'cong-mid',name:'CÔNG • MID',type:'CÔNG',lane:'MID',icon:'🔥',slots:5},{id:'cong-bot',name:'CÔNG • BOT',type:'CÔNG',lane:'BOT',icon:'🏹',slots:5},{id:'thu-top',name:'THỦ • TOP',type:'THỦ',lane:'TOP',icon:'🛡️',slots:5},{id:'thu-mid',name:'THỦ • MID',type:'THỦ',lane:'MID',icon:'🏯',slots:5},{id:'thu-bot',name:'THỦ • BOT',type:'THỦ',lane:'BOT',icon:'👑',slots:5}];
 const readLocal=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}};
 let teams=readLocal('thiennam_teams',DEFAULT_TEAMS);
@@ -295,7 +296,7 @@ let roster=readLocal('thiennam_roster',{});
 let registrations=readLocal('thiennam_registrations',[]);
 let guildMembers=readLocal('thiennam_guild_members',[]);
 let mapState=readLocal('thiennam_map',{markers:[],notes:[],draw:[],arrows:[]});
-let selectedPlayer=null, tool='', zoom=1, pan={x:0,y:0}, drawing=false, currentStroke=null, history=[],future=[];
+let selectedPlayer=null, tool='', zoom=1, pan={x:0,y:0}, drawing=false, currentStroke=null, mapHistory=[],future=[];
 let adminSession=false, movingKey=null;
 let admins=readLocal('thiennam_admins',[{name:'ThiênNam',pin:'686868',role:'owner'}]);
 const saveTeams=()=>{localStorage.setItem('thiennam_teams',JSON.stringify(teams));save()};
@@ -445,7 +446,7 @@ function unassignRegistration(id){if(!adminSession)return;let r=findRegistration
 $('members').addEventListener('click',e=>{let el=e.target.closest('.member');if(!el)return;selectedPlayer=allPlayers().find(p=>p.key===el.dataset.key)||null;tool='placePlayer';$('toolStatus').textContent=selectedPlayer?`Đã chọn: ${selectedPlayer.name} • click map để đặt`:'';renderMembers();});
 $('members').addEventListener('dragstart',e=>{let el=e.target.closest('.member');if(el)e.dataTransfer.setData('text/plain',el.dataset.key)});
 function stagePoint(e){const r=$('stage').getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100}}
-function pushHistory(){history.push(JSON.stringify(mapState));if(history.length>30)history.shift();future=[]}
+function pushHistory(){mapHistory.push(JSON.stringify(mapState));if(mapHistory.length>30)mapHistory.shift();future=[]}
 function markerIcon(type){return {boss:'👑',blueTower:'🗼',redTower:'🗼',blueTree:'🌳',redTree:'🌳',blueGoose:'🦢',redGoose:'🦢'}[type]||'•'}
 function markerClass(type){return {boss:'boss gold',blueTower:'blue',redTower:'red',blueTree:'green',redTree:'red',blueGoose:'blue',redGoose:'red'}[type]||'player'}
 function renderMap(){let ov=$('overlay');ov.innerHTML='';mapState.markers.forEach((m,i)=>{let el=document.createElement('div');el.className=`marker ${markerClass(m.type)} ${m.type==='player'?'player':''}`;el.style.left=m.x+'%';el.style.top=m.y+'%';el.dataset.i=i;el.innerHTML=`<div class="dot">${m.type==='player'?'⚔️':markerIcon(m.type)}</div><div class="label">${escapeHtml(m.label)}</div><button class="remove">×</button>`;el.onpointerdown=e=>dragMarker(e,el,m);el.querySelector('.remove').onclick=e=>{e.stopPropagation();pushHistory();mapState.markers.splice(i,1);save();renderMap()};ov.appendChild(el)});mapState.notes.forEach((n,i)=>{let el=document.createElement('div');el.className='note';el.style.left=n.x+'%';el.style.top=n.y+'%';el.innerHTML=`${escapeHtml(n.text)} <button onclick="removeNote(${i})">×</button>`;ov.appendChild(el)});renderDraw()}
@@ -460,7 +461,7 @@ let drawPts=[];$('drawLayer').addEventListener('pointerdown',e=>{if(!['draw','ar
 function pointsToPath(ps){return ps.map((p,i)=>(i?'L':'M')+' '+p.x+' '+p.y).join(' ')}
 function applyView(){ $('stage').style.transform=`translate(calc(-50% + ${pan.x}px),calc(-50% + ${pan.y}px)) scale(${zoom})`;$('zoomReadout').textContent=Math.round(zoom*100)+'%'}$('zoomIn').onclick=()=>{zoom=Math.min(3,zoom+.15);applyView()};$('zoomOut').onclick=()=>{zoom=Math.max(.5,zoom-.15);applyView()};$('resetView').onclick=()=>{zoom=1;pan={x:0,y:0};applyView()};
 let panning=false;
-$('undo').onclick=()=>{if(!history.length)return;future.push(JSON.stringify(mapState));mapState=JSON.parse(history.pop());save();renderMap()};$('redo').onclick=()=>{if(!future.length)return;history.push(JSON.stringify(mapState));mapState=JSON.parse(future.pop());save();renderMap()};
+$('undo').onclick=()=>{if(!mapHistory.length)return;future.push(JSON.stringify(mapState));mapState=JSON.parse(mapHistory.pop());save();renderMap()};$('redo').onclick=()=>{if(!future.length)return;mapHistory.push(JSON.stringify(mapState));mapState=JSON.parse(future.pop());save();renderMap()};
 $('fullscreen').onclick=()=>{let v=$('viewport');if(!document.fullscreenElement)v.requestFullscreen?.();else document.exitFullscreen?.()};$('hotkeysBtn').onclick=()=>$('hotkeys').classList.add('show');
 $('exportBtn').onclick=()=>{let data={version:4,guild:'Thiên Nam',teams,roster,registrations,guildMembers,map:mapState,exportedAt:new Date().toISOString()};let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='thien-nam-bang-chien-strategy.json';a.click();URL.revokeObjectURL(a.href);toast('Đã export chiến thuật')};$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(d.teams){teams=d.teams;saveTeams()}if(d.roster)roster=d.roster;if(d.registrations)registrations=d.registrations;if(d.guildMembers)guildMembers=d.guildMembers;if(d.map)mapState=d.map;save();renderAll();toast('Đã import chiến thuật')}catch{alert('File chiến thuật không hợp lệ.')}};r.readAsText(f)};
 function startTimer(){clearInterval(window.timerInt);window.timerInt=setInterval(()=>{let left=(mapState.timer||0)-Date.now();if(left<=0){clearInterval(window.timerInt);delete mapState.timer;save();toast('⏱ Hết giờ!');return}$('toolStatus').textContent='⏱ Timer: '+Math.ceil(left/60000)+' phút';},1000)}
@@ -488,7 +489,7 @@ function showPage(id, updateHash=true){
   document.querySelectorAll('#mainNav a').forEach(a=>{
     a.classList.toggle('nav-active', a.getAttribute('href')==='#'+id);
   });
-  if(updateHash && location.hash !== '#'+id) history.pushState(null,'','#'+id);
+  if(updateHash && location.hash !== '#'+id) window.history.pushState(null,'','#'+id); 
   window.scrollTo({top:0,behavior:'smooth'});
   if(id==='strategy') setTimeout(applyView,30);
 }
