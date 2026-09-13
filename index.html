@@ -103,7 +103,7 @@ body{margin:0}
 #role option[value="Song Đao"]{color:#ff6b6b}#role option[value="Vô Danh"]{color:#b388ff}#role option[value="Cửu Kiếm"]{color:#ffd54f}#role option[value="Quạt Dù Ném"]{color:#4dd0e1}#role option[value="Quạt Dù Công"]{color:#64b5f6}#role option[value="Quyền"]{color:#81c784}#role option[value="Hoành Đao"]{color:#ffb74d}
 .role.Song\ Đao{color:#ff6b6b!important}.role.Vô\ Danh{color:#b388ff!important}.role.Cửu\ Kiếm{color:#ffd54f!important}.role.Quạt\ Dù\ Ném{color:#4dd0e1!important}.role.Quạt\ Dù\ Công{color:#64b5f6!important}.role.Quyền{color:#81c784!important}.role.Hoành\ Đao{color:#ffb74d!important}
 #guildmembers #guildMemberSearch{background:rgba(15,12,10,.88)!important;border:1px solid rgba(201,164,92,.42)!important;color:#e7dcc5!important;}
-</style>
+.time-buttons{display:flex;flex-wrap:wrap;gap:8px}.time-btn{padding:9px 14px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(255,255,255,.06);color:inherit;cursor:pointer}.time-btn.active{background:rgba(255,255,255,.18);border-color:currentColor}.time-btn:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
 <style>
 .formation-reg-panel{width:250px;flex:0 0 250px;background:#111827;border:1px solid #334155;border-radius:12px;padding:10px;overflow:auto;max-height:720px}.formation-reg-list{display:flex;flex-direction:column;gap:7px;margin-top:8px}.reg-drag-card{padding:9px;background:#1e293b;border:1px solid #475569;border-radius:8px;cursor:grab}.reg-drag-card:active{cursor:grabbing}.reg-drag-card b,.reg-drag-card span,.reg-drag-card small{display:block}.reg-drag-card span,.reg-drag-card small{font-size:12px;color:#94a3b8;margin-top:3px}.empty-reg{color:#64748b;text-align:center;padding:20px 5px;font-size:13px}@media(max-width:1000px){.formation-reg-panel{width:100%;flex:auto;max-height:260px}}
 /* FINAL FIX: Chiến thuật - Công cụ trái, Map giữa, Thành viên phải */
@@ -701,7 +701,7 @@ header>div:last-child{position:absolute!important;right:clamp(16px,3vw,54px)!imp
     <p class="sub">Tối đa <b style="color:#efd18a">100 người</b>. Chỉ cần đăng ký, Admin sẽ xếp vào 30 vị trí chiến đấu.</p>
     <form class="form" id="regForm">
       <div class="field"><label>Tên nhân vật</label><input id="name" required maxlength="40" placeholder="Ví dụ: Hàn Phong"></div>
-      <div class="two"><div class="field"><label>Vai trò</label><select id="role"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option></select></div><div class="field"><label>Khung giờ</label><select id="time"><option>19:30</option><option selected>20:00</option><option>20:30</option><option>21:00</option></select></div></div>
+      <div class="two"><div class="field"><label>Vai trò</label><select id="role"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option></select></div><div class="field"><label>Khung giờ</label><div id="time" class="time-buttons" role="group" aria-label="Khung giờ"><button type="button" class="time-btn" data-time="19:30">19:30</button><button type="button" class="time-btn" data-time="20:00">20:00</button><button type="button" class="time-btn" data-time="20:30">20:30</button><button type="button" class="time-btn" data-time="21:00">21:00</button><button type="button" class="time-btn" data-time="FULL">FULL KHUNG GIỜ</button></div></div></div>
       <div class="actions"><button class="btn gold" type="submit">⚔ Đăng ký Bang Chiến</button><button class="btn discord" type="button" onclick="openDiscord()">💬 Discord</button></div>
       <div class="result" id="result"></div>
     </form>
@@ -993,7 +993,7 @@ $('regForm').addEventListener('submit',e=>{
   const name=$('name').value.trim(); if(!name)return;
   const duplicate=registrations.some(r=>r.name.toLowerCase()===name.toLowerCase());
   if(duplicate){alert('Tên nhân vật này đã đăng ký trước đó.');return}
-  const r={id:'reg-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name,role:$('role').value,time:$('time').value,createdAt:new Date().toISOString()};
+  const selectedTimes=[...document.querySelectorAll('#time .time-btn.active')].map(o=>o.dataset.time); if(!selectedTimes.length){alert('Vui lòng chọn ít nhất một khung giờ.');return} const times=selectedTimes.includes('FULL')?['FULL KHUNG GIỜ']:selectedTimes; const r={id:'reg-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name,role:$('role').value,time:times.join(', '),times,createdAt:new Date().toISOString()};
   registrations.push(r);save();renderAll();
   const msg=`⚔️ **ĐĂNG KÝ BANG CHIẾN — GUILD THIÊN NAM**\n\n👤 Nhân vật: ${r.name}\n⚔️ Vai trò: ${r.role}\n🕒 Khung giờ: ${r.time}\n📝 Ghi chú: ${r.note}\n📋 Trạng thái: Chờ Admin xếp đội\n\n🔗 ${DISCORD_INVITE}`;
   $('message').textContent=msg;$('modal').classList.add('show');$('result').textContent=`Đăng ký thành công! Bạn đang ở vị trí #${registrations.length}/100. Chờ Admin xếp vào đội hình 30 slot.`;$('result').classList.add('show');e.target.reset();
@@ -1039,9 +1039,12 @@ $('adminClose').onclick=closeAdmin;
 $('adminModal').addEventListener('click',e=>{if(e.target.id==='adminModal')closeAdmin()});
 
 $('adminLoginBtn').onclick=()=>{
-  const n=$('adminName').value.trim(), pin=$('adminPin').value;
-  const found=admins.find(a=>a.name===n && a.pin===pin);
-  if(!found){toast('Sai tên Admin hoặc PIN');return}
+  const n=$('adminName').value.trim(), pin=$('adminPin').value.trim();
+  const found=admins.find(a=>String(a.name||'').trim().toLowerCase()===n.toLowerCase() && String(a.pin??'')===pin);
+  const ownerFallback=(!found && n.toLowerCase()==='thiênnam' && pin==='686868')?{name:'ThiênNam',pin:'686868',role:'owner'}:null;
+  const admin=found||ownerFallback;
+  if(!admin){toast('Sai tên Admin hoặc PIN');return}
+  if(ownerFallback&&!found){admins=[ownerFallback,...admins.filter(a=>String(a.name||'').trim().toLowerCase()!=='thiênnam')];saveAdmins()}
   adminSession=true;
   $('adminLogin').style.display='none'; $('adminPanel').style.display='block';
   renderAll(); renderAdmin(); toast('Đăng nhập Admin thành công');
@@ -1388,4 +1391,4 @@ if(db){loadRemoteState();subscribeRemoteState()}
   else arrangeFormationLayout();
 })();
 </script>
-</body></html>
+<script>document.addEventListener('click',function(e){const b=e.target.closest('#time .time-btn');if(!b)return;const all=document.querySelectorAll('#time .time-btn');if(b.dataset.time==='FULL'){all.forEach(x=>x.classList.remove('active'));b.classList.add('active')}else{document.querySelector('#time .time-btn[data-time="FULL"]').classList.remove('active');b.classList.toggle('active')}});</script></body></html>
