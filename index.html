@@ -102,6 +102,7 @@ body{margin:0}
 /* Màu nhận diện vai trò */
 #role option[value="Song Đao"]{color:#ff6b6b}#role option[value="Vô Danh"]{color:#b388ff}#role option[value="Cửu Kiếm"]{color:#ffd54f}#role option[value="Quạt Dù Ném"]{color:#4dd0e1}#role option[value="Quạt Dù Công"]{color:#64b5f6}#role option[value="Quyền"]{color:#81c784}#role option[value="Hoành Đao"]{color:#ffb74d}
 .role.Song\ Đao{color:#ff6b6b!important}.role.Vô\ Danh{color:#b388ff!important}.role.Cửu\ Kiếm{color:#ffd54f!important}.role.Quạt\ Dù\ Ném{color:#4dd0e1!important}.role.Quạt\ Dù\ Công{color:#64b5f6!important}.role.Quyền{color:#81c784!important}.role.Hoành\ Đao{color:#ffb74d!important}
+#guildmembers #guildMemberSearch{background:rgba(15,12,10,.88)!important;border:1px solid rgba(201,164,92,.42)!important;color:#e7dcc5!important;}
 </style>
 <style>
 .formation-reg-panel{width:250px;flex:0 0 250px;background:#111827;border:1px solid #334155;border-radius:12px;padding:10px;overflow:auto;max-height:720px}.formation-reg-list{display:flex;flex-direction:column;gap:7px;margin-top:8px}.reg-drag-card{padding:9px;background:#1e293b;border:1px solid #475569;border-radius:8px;cursor:grab}.reg-drag-card:active{cursor:grabbing}.reg-drag-card b,.reg-drag-card span,.reg-drag-card small{display:block}.reg-drag-card span,.reg-drag-card small{font-size:12px;color:#94a3b8;margin-top:3px}.empty-reg{color:#64748b;text-align:center;padding:20px 5px;font-size:13px}@media(max-width:1000px){.formation-reg-panel{width:100%;flex:auto;max-height:260px}}
@@ -597,10 +598,34 @@ header>div:last-child{position:absolute!important;right:clamp(16px,3vw,54px)!imp
   #guildmembers .guild-member-actions{position:static!important;transform:none!important;margin-top:8px!important}
 }
 </style>
+
+<style id="thien-nam-random-style">
+#random{min-height:calc(100vh - 68px)!important;padding:34px clamp(14px,3vw,54px)!important;background:radial-gradient(ellipse at 50% 0,rgba(201,164,92,.10),transparent 38%),linear-gradient(180deg,#0b0f10,#06090b)!important}
+#random .random-shell{width:min(1180px,100%);margin:0 auto}
+#random .random-title{text-align:center;margin-bottom:22px}
+#random .random-title .kicker{margin-bottom:8px}
+#random .random-title h2{margin:0;color:#eee5d3;font:600 clamp(30px,5vw,52px)/1 Georgia,"Times New Roman",serif;letter-spacing:3px;text-transform:uppercase}
+#random .random-title p{margin:9px auto 0;color:#9f9b91;max-width:650px}
+#random .random-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:stretch}
+#random .random-wheel-card,#random .random-list-card{background:linear-gradient(180deg,rgba(20,24,24,.92),rgba(8,11,12,.96));border:1px solid rgba(201,164,92,.25);box-shadow:0 20px 70px rgba(0,0,0,.3);padding:18px}
+#random .random-wheel-wrap{position:relative;display:grid;place-items:center;min-height:600px;overflow:hidden;background:radial-gradient(circle,#151916 0,#080b0c 68%,#050708 100%);border:1px solid rgba(201,164,92,.18)}
+#random #randomCanvas{width:min(100%,600px);height:auto;aspect-ratio:1/1;display:block;cursor:pointer;touch-action:manipulation}
+#random .random-pointer{position:absolute;top:calc(50% - min(300px,25vw) - 10px);left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:28px solid #efd18a;filter:drop-shadow(0 3px 5px #000);z-index:2;pointer-events:none}
+#random .random-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:74px;height:74px;border-radius:50%;border:2px solid #efd18a;background:radial-gradient(circle,#4a3820,#111412 70%);display:grid;place-items:center;color:#f5dfaa;font:700 12px Georgia,serif;letter-spacing:1px;box-shadow:0 0 0 7px rgba(0,0,0,.28),0 8px 25px #000;pointer-events:none;z-index:2}
+#random .random-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+#random .random-result{min-height:48px;margin-top:12px;padding:12px;text-align:center;border:1px solid rgba(201,164,92,.22);background:rgba(201,164,92,.045);color:#efd18a;font:700 17px Georgia,serif;display:flex;align-items:center;justify-content:center}
+#random .random-list-card h3{margin:0;color:#e7dcc5;font:600 19px Georgia,serif;letter-spacing:1px}
+#random .random-list-card p{color:#89877f;font-size:11px;margin:5px 0 10px}
+#random #randomEntries{width:100%;min-height:430px;resize:vertical;padding:12px;border:1px solid rgba(201,164,92,.20);border-radius:0;background:rgba(5,8,9,.82);color:#e6dfd0;outline:none;font:13px/1.5 Inter,system-ui,sans-serif}
+#random #randomEntries:focus{border-color:rgba(201,164,92,.70);box-shadow:0 0 0 1px rgba(201,164,92,.18)}
+#random .random-hint{display:flex;justify-content:space-between;gap:8px;color:#77776f;font-size:10px;margin-top:7px}
+@media(max-width:900px){#random .random-grid{grid-template-columns:1fr}#random .random-list-card{order:-1}#random #randomEntries{min-height:220px}#random .random-wheel-wrap{min-height:0;padding:12px}.random-pointer{top:10px!important}.random-center{width:64px!important;height:64px!important}}
+@media(max-width:680px){#random{padding:22px 10px!important}#random .random-wheel-card,#random .random-list-card{padding:12px}#random .random-wheel-wrap{padding:5px}.random-center{width:56px!important;height:56px!important;font-size:10px!important}}
+</style>
 </head>
 <body>
 <div class="bg"></div>
-<header><div class="brand" aria-hidden="true"></div><nav id="mainNav"><a href="#home">Trang chủ</a><a href="#teams">Đăng ký Bang chiến</a><a href="#guildmembers">Thành Viên Bang Hội</a><a href="#strategy">Chiến thuật</a></nav><div style="display:flex;gap:7px;align-items:center"><button class="btn small" id="adminBtn" type="button">Admin</button><a class="discord" href="https://discord.gg/vzc7PFxAv" target="_blank">Discord</a></div></header>
+<header><div class="brand" aria-hidden="true"></div><nav id="mainNav"><a href="#home">Trang chủ</a><a href="#teams">Đăng ký Bang chiến</a><a href="#guildmembers">Thành Viên Bang Hội</a><a href="#strategy">Chiến thuật</a><a href="#random">Random</a></nav><div style="display:flex;gap:7px;align-items:center"><button class="btn small" id="adminBtn" type="button">Admin</button><a class="discord" href="https://discord.gg/vzc7PFxAv" target="_blank">Discord</a></div></header>
 <main>
 <section class="hero page-section page-home active" id="home"><div class="home-inner"><div class="kicker">THIÊN NAM • GIANG HỒ</div><h1>GIANG HỒ • BANG CHIẾN</h1><h2>30 CHIẾN VỊ • 6 ĐỘI HÌNH • MỘT CHIẾN THUẬT</h2><p>Đăng ký Bang chiến và quản lý danh sách thành viên. Dùng trang Chiến thuật để điều phối trên bản đồ.</p>
 <div class="home-cards">
@@ -615,10 +640,43 @@ header>div:last-child{position:absolute!important;right:clamp(16px,3vw,54px)!imp
 <div class="section-title"><div><h2>👥 Thành Viên Bang Hội</h2><p class="sub">Danh sách thành viên chính thức của Guild Thiên Nam. Admin có thể thêm, sửa vai trò và xóa thành viên.</p></div><span class="tag" id="guildMemberCount">0</span></div>
 <div id="guildMemberAdmin" class="card" style="padding:14px;margin-bottom:14px;display:none">
 <h3 style="margin-top:0;color:#ecd18c">⚙ Quản lý Thành Viên Bang Hội</h3>
-<div class="two"><div class="field"><label>Tên thành viên</label><input id="guildNameInput" maxlength="40" placeholder="Nhập tên nhân vật"></div><div class="field"><label>UID <span style="color:#8b93a0;font-size:11px">(chỉ Admin)</span></label><input id="guildUidInput" maxlength="60" placeholder="Nhập UID"></div><div class="field"><label>Vai trò</label><select id="guildRoleInput"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option></select></div></div>
+<div class="two"><div class="field"><label>Tên thành viên</label><input id="guildNameInput" maxlength="40" placeholder="Nhập tên nhân vật"></div><div class="field"><label>UID <span style="color:#8b93a0;font-size:11px">(chỉ Admin)</span></label><input id="guildUidInput" maxlength="60" placeholder="Nhập UID"></div><div class="field"><label>Vai trò</label><select id="guildRoleInput"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option>Flex</option></select></div></div>
 <div class="actions" style="margin-top:10px"><button class="btn gold" id="addGuildMemberBtn" type="button">＋ Thêm thành viên</button></div>
 </div>
 <div class="card" style="padding:14px"><div class="filters" style="margin-bottom:10px"><input id="guildMemberSearch" placeholder="🔎 Tìm tên thành viên bang hội..."></div><div id="guildMembersList" style="display:grid;gap:8px"></div></div>
+</section>
+
+
+<section class="page-section" id="random">
+  <div class="random-shell">
+    <div class="random-title">
+      <div class="kicker">THIÊN NAM • GIANG HỒ</div>
+      <h2>VÒNG QUAY RANDOM</h2>
+      <p>Nhập danh sách tên hoặc nội dung, sau đó quay vòng để chọn ngẫu nhiên một người.</p>
+    </div>
+    <div class="random-grid">
+      <div class="random-wheel-card">
+        <div class="random-wheel-wrap" id="randomWheelWrap">
+          <canvas id="randomCanvas" width="620" height="620" aria-label="Vòng quay Random"></canvas>
+          <div class="random-pointer"></div>
+          <div class="random-center">QUAY</div>
+        </div>
+        <div class="random-actions">
+          <button class="btn gold" id="randomSpinBtn" type="button">🎲 QUAY RANDOM</button>
+          <button class="btn" id="randomShuffleBtn" type="button">🔀 Trộn danh sách</button>
+          <button class="btn red" id="randomRemoveBtn" type="button">✕ Xóa người trúng</button>
+          <button class="btn" id="randomResetBtn" type="button">↺ Khôi phục</button>
+        </div>
+        <div class="random-result" id="randomResult">Sẵn sàng quay</div>
+      </div>
+      <div class="random-list-card">
+        <h3>Danh sách Random</h3>
+        <p>Mỗi dòng là một lựa chọn. Danh sách chỉ dùng cho trang Random.</p>
+        <textarea id="randomEntries" spellcheck="false" placeholder="Nhập tên, mỗi tên một dòng..."></textarea>
+        <div class="random-hint"><span id="randomCount">0 lựa chọn</span><span>Ctrl + Enter để quay</span></div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="layout page-section" id="strategy">
@@ -673,7 +731,6 @@ header>div:last-child{position:absolute!important;right:clamp(16px,3vw,54px)!imp
   <div id="adminLogin">
     <div class="card" style="margin-top:12px">
       <h3 style="margin-top:0;color:#ecd18c">Đăng nhập Admin</h3>
-      <p class="sub">Bản HTML tĩnh chỉ bảo vệ giao diện bằng mã PIN lưu trên trình duyệt. Khi deploy thực tế, nên chuyển quyền sang backend/database.</p>
       <div class="two"><div class="field"><label>Tên Admin</label><input id="adminName" placeholder="Ví dụ: Thiên Nam Leader"></div>
       <div class="field"><label>Mã PIN</label><input id="adminPin" type="password" placeholder="Mã PIN Admin"></div></div>
       <div class="actions" style="margin-top:10px"><button class="btn gold" id="adminLoginBtn">🔓 Đăng nhập</button></div>
@@ -946,7 +1003,7 @@ function openDiscord(){window.open(DISCORD_INVITE,'_blank')};function closeModal
 
 // ===== Điều hướng các mục thành từng trang =====
 function showPage(id, updateHash=true){
-  const allowed=['home','register','strategy','teams','guildmembers'];
+  const allowed=['home','register','strategy','teams','guildmembers','random'];
   if(!allowed.includes(id)) id='home';
   document.querySelectorAll('.page-section').forEach(el=>el.classList.remove('active'));
   const page=$(id);
@@ -1188,6 +1245,70 @@ function renderAll(){
 renderAll();
 if(db){loadRemoteState();subscribeRemoteState()}
 
+</script>
+
+<script id="thien-nam-random-script">
+(function(){
+  const canvas=document.getElementById('randomCanvas');
+  const entriesEl=document.getElementById('randomEntries');
+  const spinBtn=document.getElementById('randomSpinBtn');
+  const shuffleBtn=document.getElementById('randomShuffleBtn');
+  const removeBtn=document.getElementById('randomRemoveBtn');
+  const resetBtn=document.getElementById('randomResetBtn');
+  const resultEl=document.getElementById('randomResult');
+  const countEl=document.getElementById('randomCount');
+  if(!canvas||!entriesEl)return;
+  const ctx=canvas.getContext('2d');
+  const defaultEntries=['Thành viên 1','Thành viên 2','Thành viên 3','Thành viên 4','Thành viên 5','Thành viên 6'];
+  let originalEntries=defaultEntries.slice();
+  let entries=defaultEntries.slice();
+  let rotation=0,spinning=false,lastWinner=-1;
+  const colors=['#8e302d','#b27a35','#71877c','#6d5b8c','#9a7040','#466c68','#a34d3d','#7d8051','#5e6e7f','#8d6840'];
+  const secureRandom=()=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]/4294967296};
+  function parseEntries(){return entriesEl.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}
+  function updateCount(){countEl.textContent=entries.length+' lựa chọn'}
+  function setEntries(list){entries=list.slice();entriesEl.value=entries.join('\n');updateCount();drawWheel()}
+  function drawWheel(){
+    const d=window.devicePixelRatio||1,size=620;
+    canvas.width=size*d;canvas.height=size*d;ctx.setTransform(d,0,0,d,0,0);
+    const cx=size/2,cy=size/2,r=285;ctx.clearRect(0,0,size,size);
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(rotation);
+    if(!entries.length){ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle='#151916';ctx.fill();ctx.strokeStyle='#c9a45c';ctx.lineWidth=2;ctx.stroke();ctx.restore();return}
+    const step=Math.PI*2/entries.length;
+    entries.forEach((text,i)=>{
+      const a0=i*step,a1=a0+step;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,r,a0,a1);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle='rgba(239,209,138,.45)';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.save();ctx.rotate(a0+step/2);ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#f6edd9';ctx.font=(entries.length>18?'600 11px':'600 14px')+' Inter,system-ui,sans-serif';
+      const label=text.length>24?text.slice(0,23)+'…':text;ctx.fillText(label,r-22,0);ctx.restore();
+    });
+    ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle='#efd18a';ctx.lineWidth=4;ctx.stroke();ctx.restore();
+  }
+  function syncFromText(){entries=parseEntries();lastWinner=-1;updateCount();drawWheel();if(!spinning)resultEl.textContent=entries.length?'Sẵn sàng quay':'Hãy nhập ít nhất 1 lựa chọn'}
+  function spin(){
+    if(spinning)return;entries=parseEntries();updateCount();
+    if(!entries.length){resultEl.textContent='Hãy nhập ít nhất 1 lựa chọn';return}
+    spinning=true;spinBtn.disabled=true;shuffleBtn.disabled=true;removeBtn.disabled=true;
+    const winner=Math.floor(secureRandom()*entries.length),step=Math.PI*2/entries.length;
+    const target=-(winner*step+step/2)+Math.PI/2;
+    const turns=6+secureRandom()*3,start=rotation,end=target+turns*Math.PI*2;
+    const t0=performance.now(),duration=4200;
+    function frame(now){
+      const p=Math.min(1,(now-t0)/duration),e=1-Math.pow(1-p,4);rotation=start+(end-start)*e;drawWheel();
+      if(p<1){requestAnimationFrame(frame);return}
+      rotation=end%(Math.PI*2);lastWinner=winner;resultEl.textContent='🎉 Kết quả: '+entries[winner];spinning=false;spinBtn.disabled=false;shuffleBtn.disabled=false;removeBtn.disabled=false;drawWheel();
+    }
+    requestAnimationFrame(frame);
+  }
+  entriesEl.addEventListener('input',syncFromText);
+  spinBtn.addEventListener('click',spin);canvas.addEventListener('click',spin);
+  shuffleBtn.addEventListener('click',()=>{entries=parseEntries();for(let i=entries.length-1;i>0;i--){const j=Math.floor(secureRandom()*(i+1));[entries[i],entries[j]]=[entries[j],entries[i]]}setEntries(entries);resultEl.textContent='Đã trộn danh sách'});
+  removeBtn.addEventListener('click',()=>{if(spinning||lastWinner<0||lastWinner>=entries.length)return;const removed=entries.splice(lastWinner,1)[0];setEntries(entries);lastWinner=-1;resultEl.textContent='Đã xóa: '+removed});
+  resetBtn.addEventListener('click',()=>{setEntries(originalEntries);lastWinner=-1;resultEl.textContent='Đã khôi phục danh sách mặc định'});
+  entriesEl.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();spin()}});
+  // If the guild member list already exists, use it as the initial Random list when available.
+  try{if(Array.isArray(window.guildMembers)&&window.guildMembers.length){const names=window.guildMembers.map(m=>String(m.name||'').trim()).filter(Boolean);if(names.length){originalEntries=names.slice();setEntries(names)}}else{setEntries(defaultEntries)}}catch(_){setEntries(defaultEntries)}
+  window.addEventListener('resize',drawWheel);
+})();
 </script>
 
 <script id="tn-music-script">
