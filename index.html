@@ -1532,7 +1532,7 @@ function renderAdminSettings(){
     <p class="sub">Bot Discord sẽ đọc tin nhắn ở đúng kênh chỉ định rồi gửi dữ liệu về website. Bot Token không nằm trong file HTML.</p>
     <div class="two">
       <div class="field"><label>Channel ID</label><input value="1537978516812079174" readonly></div>
-      <div class="field"><label>API đồng bộ</label><input value="/api/discord-members" readonly></div>
+      <div class="field"><label>API đồng bộ</label><input value="https://fjaqtmamsfhtkcscmrjl.supabase.co/functions/v1/discord-members" readonly></div>
     </div>
     <div class="actions" style="margin-top:10px">
       <button class="btn blue" type="button" onclick="syncGuildMembersFromDiscord(true)">↻ Đồng bộ Discord ngay</button>
@@ -1603,7 +1603,7 @@ $('addGuildMemberBtn')?.addEventListener('click',addGuildMember);
 // ===== Discord → Thành Viên Bang Hội =====
 // Chỉ chứa Channel ID và đường dẫn API công khai. Bot Token tuyệt đối không đặt trong HTML.
 const DISCORD_GUILD_CHANNEL_ID='1537978516812079174';
-const DISCORD_GUILD_SYNC_API=SUPABASE_BASE_URL+'/functions/v1/discord-members';
+const DISCORD_GUILD_SYNC_API='https://fjaqtmamsfhtkcscmrjl.supabase.co/functions/v1/discord-members';
 const DISCORD_GUILD_SYNC_INTERVAL=30000;
 let discordGuildSyncTimer=null;
 let discordGuildSyncBusy=false;
