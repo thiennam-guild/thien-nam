@@ -1807,7 +1807,7 @@ async function syncGuildMembersFromDiscord(manual=false){
   setDiscordGuildSyncStatus(manual?'Đang đồng bộ...':'Đang kiểm tra Discord...');
 
   try{
-    const url=DISCORD_GUILD_SYNC_API+'?channel_id='+encodeURIComponent(DISCORD_GUILD_CHANNEL_ID);
+    const url=DISCORD_GUILD_SYNC_API;
     const response=await fetch(url,{method:'GET',headers:{'Accept':'application/json','apikey':SUPABASE_ANON_KEY},cache:'no-store'});
     if(!response.ok)throw new Error('HTTP '+response.status);
     const payload=await response.json();
