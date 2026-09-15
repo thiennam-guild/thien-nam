@@ -1099,29 +1099,180 @@ const saveTeams=()=>{localStorage.setItem('thiennam_teams',JSON.stringify(teams)
 const saveAdmins=()=>{localStorage.setItem('thiennam_admins',JSON.stringify(admins));save()};
 const $=id=>document.getElementById(id);
 let remoteWriteInProgress=false;
+let remoteLoadInProgress=false;
+let remoteSaveTimer=null;
 const statePayload=()=>({teams,roster,registrations,guildMembers,mapState});
-const save=()=>{
- localStorage.setItem('thiennam_roster',JSON.stringify(roster));localStorage.setItem('thiennam_map',JSON.stringify(mapState));localStorage.setItem('thiennam_registrations',JSON.stringify(registrations));localStorage.setItem('thiennam_guild_members',JSON.stringify(guildMembers));
- if(!db||remoteWriteInProgress)return;
- db.from('tn_app_state').upsert({id:1,state:statePayload(),updated_at:new Date().toISOString()}).then(({error})=>{if(error)console.error('Supabase save failed:',error)});
-};
+
+// ===== NORMALIZED SUPABASE STORAGE =====
+// 3 domain APIs/tables:
+// 1) tn_registrations  — đăng ký Bang Chiến
+// 2) tn_guild_members  — thành viên bang hội / Discord
+// 3) tn_teams + tn_roster_slots — đội hình + slot
+// mapState remains localStorage for now because it is not part of the requested 3 domains.
+
+async function saveNormalizedState(){
+  if(!db || remoteWriteInProgress)return;
+  remoteWriteInProgress=true;
+  try{
+    const registrationRows=registrations.map(r=>({
+      id:String(r.id), name:String(r.name||''), role:String(r.role||''),
+      time:String(r.time||''), times:Array.isArray(r.times)?r.times:[],
+      note:r.note||null, assigned:r.assigned||null,
+      team_id:r.team||null, slot:r.slot?Number(r.slot):null,
+      created_at:r.createdAt||new Date().toISOString(),
+      updated_at:new Date().toISOString()
+    }));
+    const guildRows=guildMembers.map(m=>({
+      id:String(m.id), name:String(m.name||''), uid:m.uid||null,
+      role:String(m.role||'Flex'), source:m.source||'manual',
+      discord_channel_id:m.discordChannelId||DISCORD_GUILD_CHANNEL_ID,
+      discord_user_id:m.discordUserId||m.discord_user_id||null,
+      username:m.username||null, updated_at:new Date().toISOString()
+    }));
+    const teamRows=teams.map((t,i)=>({
+      id:String(t.id), name:String(t.name||''), type:String(t.type||''),
+      lane:String(t.lane||''), icon:String(t.icon||''),
+      slots:teamCapacity(t), sort_order:i, updated_at:new Date().toISOString()
+    }));
+    const rosterRows=[];
+    for(const t of teams){
+      const arr=roster[t.id]||[];
+      for(let i=0;i<teamCapacity(t);i++){
+        const p=arr[i];
+        if(p)rosterRows.push({
+          team_id:String(t.id), slot_number:i+1,
+          name:String(p.name||''), role:String(p.role||''), time:p.time||null,
+          note:p.note||null, registration_id:p.registrationId||null,
+          guild_member_id:p.guildMemberId||null,
+          updated_at:new Date().toISOString()
+        });
+      }
+    }
+
+    // Upsert current records first.
+    const ops=[];
+    if(registrationRows.length)ops.push(db.from('tn_registrations').upsert(registrationRows,{onConflict:'id'}));
+    if(guildRows.length)ops.push(db.from('tn_guild_members').upsert(guildRows,{onConflict:'id'}));
+    if(teamRows.length)ops.push(db.from('tn_teams').upsert(teamRows,{onConflict:'id'}));
+    if(rosterRows.length)ops.push(db.from('tn_roster_slots').upsert(rosterRows,{onConflict:'team_id,slot_number'}));
+    const results=await Promise.all(ops);
+    const failed=results.find(x=>x.error);
+    if(failed?.error)throw failed.error;
+
+    // Remove records that no longer exist in the browser state.
+    const regIds=registrationRows.map(x=>x.id);
+    const gmIds=guildRows.map(x=>x.id);
+    const teamIds=teamRows.map(x=>x.id);
+    const keepRoster=rosterRows.map(x=>`${x.team_id}:${x.slot_number}`);
+    if(regIds.length)await db.from('tn_registrations').delete().not('id','in',`(${regIds.map(x=>`"${x.replaceAll('"','\\"')}"`).join(',')})`);
+    else await db.from('tn_registrations').delete().neq('id','__never__');
+    if(gmIds.length)await db.from('tn_guild_members').delete().not('id','in',`(${gmIds.map(x=>`"${x.replaceAll('"','\\"')}"`).join(',')})`);
+    else await db.from('tn_guild_members').delete().neq('id','__never__');
+    if(teamIds.length)await db.from('tn_teams').delete().not('id','in',`(${teamIds.map(x=>`"${x.replaceAll('"','\\"')}"`).join(',')})`);
+    else await db.from('tn_teams').delete().neq('id','__never__');
+    // Slots belonging to removed teams or emptied slots are cleaned by team/slot matching.
+    if(teamIds.length){
+      const keep=keepRoster.length?`(${keepRoster.map(x=>`"${x.replaceAll('"','\\"')}"`).join(',')})`:null;
+      const {data:allSlots,error:e}=await db.from('tn_roster_slots').select('team_id,slot_number');
+      if(e)throw e;
+      const stale=(allSlots||[]).filter(x=>!teamIds.includes(String(x.team_id)) || !keepRoster.includes(`${x.team_id}:${x.slot_number}`));
+      if(stale.length){
+        for(const x of stale)await db.from('tn_roster_slots').delete().eq('team_id',x.team_id).eq('slot_number',x.slot_number);
+      }
+    }else await db.from('tn_roster_slots').delete().neq('team_id','__never__');
+  }catch(error){
+    console.error('Supabase normalized save failed:',error);
+    toast('Lưu dữ liệu online thất bại');
+  }finally{
+    remoteWriteInProgress=false;
+  }
+}
+
+function save(){
+  localStorage.setItem('thiennam_teams',JSON.stringify(teams));
+  localStorage.setItem('thiennam_roster',JSON.stringify(roster));
+  localStorage.setItem('thiennam_map',JSON.stringify(mapState));
+  localStorage.setItem('thiennam_registrations',JSON.stringify(registrations));
+  localStorage.setItem('thiennam_guild_members',JSON.stringify(guildMembers));
+  if(!db||remoteWriteInProgress)return;
+  clearTimeout(remoteSaveTimer);
+  remoteSaveTimer=setTimeout(()=>saveNormalizedState(),80);
+}
+
 async function loadRemoteState(){
- if(!db)return;
- const {data,error}=await db.from('tn_app_state').select('state').eq('id',1).maybeSingle();
- if(error){console.error('Supabase load failed:',error);toast('Không tải được dữ liệu online; đang dùng dữ liệu cục bộ');return}
- if(!data?.state){save();return}
- remoteWriteInProgress=true;const s=data.state;
- if(Array.isArray(s.teams))teams=s.teams;if(s.roster&&typeof s.roster==='object')roster=s.roster;if(Array.isArray(s.registrations))registrations=s.registrations;if(Array.isArray(s.guildMembers))guildMembers=s.guildMembers;if(s.mapState&&typeof s.mapState==='object')mapState=s.mapState;
- remoteWriteInProgress=false;renderAll();
+  if(!db || remoteLoadInProgress)return;
+  remoteLoadInProgress=true;
+  try{
+    const [regRes,gmRes,teamRes,slotRes]=await Promise.all([
+      db.from('tn_registrations').select('*').order('created_at',{ascending:true}),
+      db.from('tn_guild_members').select('*').order('name',{ascending:true}),
+      db.from('tn_teams').select('*').order('sort_order',{ascending:true}),
+      db.from('tn_roster_slots').select('*').order('team_id').order('slot_number')
+    ]);
+    for(const x of [regRes,gmRes,teamRes,slotRes])if(x.error)throw x.error;
+
+    const hasNormalized=(teamRes.data||[]).length||(regRes.data||[]).length||(gmRes.data||[]).length||(slotRes.data||[]).length;
+    if(!hasNormalized){
+      // One-time migration: prefer the existing tn_app_state data if it exists;
+      // otherwise migrate the current browser localStorage state.
+      const legacy=await db.from('tn_app_state').select('state').eq('id',1).maybeSingle();
+      if(!legacy.error && legacy.data?.state){
+        const s=legacy.data.state;
+        if(Array.isArray(s.teams))teams=s.teams;
+        if(s.roster&&typeof s.roster==='object')roster=s.roster;
+        if(Array.isArray(s.registrations))registrations=s.registrations;
+        if(Array.isArray(s.guildMembers))guildMembers=s.guildMembers;
+        if(s.mapState&&typeof s.mapState==='object')mapState=s.mapState;
+        localStorage.setItem('thiennam_teams',JSON.stringify(teams));
+        localStorage.setItem('thiennam_roster',JSON.stringify(roster));
+        localStorage.setItem('thiennam_registrations',JSON.stringify(registrations));
+        localStorage.setItem('thiennam_guild_members',JSON.stringify(guildMembers));
+        localStorage.setItem('thiennam_map',JSON.stringify(mapState));
+      }
+      await saveNormalizedState();
+      renderAll();
+      return;
+    }
+
+    teams=(teamRes.data||[]).map(t=>({id:t.id,name:t.name,type:t.type,lane:t.lane,icon:t.icon,slots:Number(t.slots)||5}));
+    roster={};
+    teams.forEach(t=>roster[t.id]=[]);
+    (slotRes.data||[]).forEach(x=>{
+      if(!roster[x.team_id])roster[x.team_id]=[];
+      roster[x.team_id][Number(x.slot_number)-1]={
+        name:x.name,role:x.role||'',time:x.time||'',note:x.note||'',
+        ...(x.registration_id?{registrationId:x.registration_id}:{}),
+        ...(x.guild_member_id?{guildMemberId:x.guild_member_id}:{})
+      };
+    });
+    registrations=(regRes.data||[]).map(r=>({
+      id:r.id,name:r.name,role:r.role,time:r.time||'',times:Array.isArray(r.times)?r.times:[],
+      note:r.note||undefined,createdAt:r.created_at,
+      ...(r.assigned?{assigned:r.assigned}:{}),...(r.team_id?{team:r.team_id}:{}),...(r.slot?{slot:r.slot}:{}),
+    }));
+    guildMembers=(gmRes.data||[]).map(m=>({
+      id:m.id,name:m.name,uid:m.uid||'',role:m.role||'Flex',source:m.source||'manual',
+      ...(m.discord_channel_id?{discordChannelId:m.discord_channel_id}:{}),
+      ...(m.discord_user_id?{discordUserId:m.discord_user_id}:{}),
+      ...(m.username?{username:m.username}:{}),
+    }));
+    renderAll();
+  }catch(error){
+    console.error('Supabase normalized load failed:',error);
+    toast('Không tải được dữ liệu online; đang dùng dữ liệu cục bộ');
+  }finally{remoteLoadInProgress=false;}
 }
+
 function subscribeRemoteState(){
- if(!db)return;
- db.channel('tn-app-state').on('postgres_changes',{event:'*',schema:'public',table:'tn_app_state',filter:'id=eq.1'},payload=>{
-  if(remoteWriteInProgress||!payload.new?.state)return;const s=payload.new.state;
-  if(Array.isArray(s.teams))teams=s.teams;if(s.roster&&typeof s.roster==='object')roster=s.roster;if(Array.isArray(s.registrations))registrations=s.registrations;if(Array.isArray(s.guildMembers))guildMembers=s.guildMembers;if(s.mapState&&typeof s.mapState==='object')mapState=s.mapState;
-  renderAll();
- }).subscribe();
+  if(!db)return;
+  ['tn_registrations','tn_guild_members','tn_teams','tn_roster_slots'].forEach(table=>{
+    db.channel('tn-'+table+'-'+Math.random().toString(36).slice(2,7))
+      .on('postgres_changes',{event:'*',schema:'public',table},()=>{
+        if(!remoteWriteInProgress)loadRemoteState();
+      }).subscribe();
+  });
 }
+
 function toast(t){$('toast').textContent=t;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1800)}
 function escapeHtml(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function allPlayers(){return teams.flatMap(t=>(roster[t.id]||[]).map((p,i)=>p?({...p,team:t.id,teamName:t.name,slot:i+1,key:t.id+'-'+(i+1)}):null)).filter(Boolean)}
