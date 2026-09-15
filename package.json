@@ -1,0 +1,7 @@
+{
+  "name": "thien-nam-supabase-discord",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Thiên Nam website + Supabase Edge Function đồng bộ Discord",
+  "scripts": {}
+}

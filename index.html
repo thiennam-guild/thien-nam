@@ -872,6 +872,36 @@ html, body, * {
   background: #9a6b35 !important;
 }
 </style>
+
+<style id="discord-guild-sync-style">
+/* DISCORD GUILD SYNC — chỉ bổ sung khu vực đồng bộ, không thay đổi giao diện hiện có */
+#guildmembers .discord-sync-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;
+  border:1px solid rgba(201,164,92,.22);
+  background:rgba(8,11,12,.62);
+}
+#guildmembers .discord-sync-info{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  color:#aaa59a;font-size:11px;
+}
+#guildmembers .discord-sync-dot{
+  width:8px;height:8px;border-radius:50%;background:#71877c;
+  box-shadow:0 0 8px rgba(113,135,124,.45);
+}
+#guildmembers .discord-sync-dot.online{background:#54c98a;box-shadow:0 0 8px rgba(84,201,138,.55)}
+#guildmembers .discord-sync-dot.error{background:#c64b43;box-shadow:0 0 8px rgba(198,75,67,.45)}
+#guildmembers .discord-sync-status{color:#bdb8aa}
+#guildmembers .discord-channel-id{color:#c9a45c;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+#adminSettingsTab .discord-sync-settings{
+  margin-top:12px;padding:12px;border:1px solid rgba(201,164,92,.22);
+  background:rgba(8,11,12,.48);
+}
+#adminSettingsTab .discord-sync-settings code{
+  color:#efd18a;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+</style>
+
 </head>
 <body>
 
@@ -921,6 +951,15 @@ html, body, * {
 <h3 style="margin-top:0;color:#ecd18c">⚙ Quản lý Thành Viên Bang Hội</h3>
 <div class="two"><div class="field"><label>Tên thành viên</label><input id="guildNameInput" maxlength="40" placeholder="Nhập tên nhân vật"></div><div class="field"><label>UID <span style="color:#8b93a0;font-size:11px">(chỉ Admin)</span></label><input id="guildUidInput" maxlength="60" placeholder="Nhập UID"></div><div class="field"><label>Vai trò</label><select id="guildRoleInput"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option>Flex</option></select></div></div>
 <div class="actions" style="margin-top:10px"><button class="btn gold" id="addGuildMemberBtn" type="button">＋ Thêm thành viên</button></div>
+</div>
+<div class="discord-sync-bar" id="guildDiscordSyncBar">
+  <div class="discord-sync-info">
+    <span class="discord-sync-dot" id="guildDiscordSyncDot"></span>
+    <span>Discord tự động đồng bộ</span>
+    <span class="discord-sync-status" id="guildDiscordSyncStatus">Đang chuẩn bị...</span>
+    <span class="discord-channel-id">Kênh: 1537978516812079174</span>
+  </div>
+  <button class="btn small" id="guildDiscordSyncBtn" type="button">↻ Đồng bộ ngay</button>
 </div>
 <div class="card" style="padding:14px"><div class="filters" style="margin-bottom:10px"><input id="guildMemberSearch" placeholder="🔎 Tìm tên thành viên bang hội..."></div><div id="guildMembersList" style="display:grid;gap:8px"></div></div>
 </section>
@@ -981,7 +1020,7 @@ html, body, * {
     <form class="form" id="regForm">
       <div class="field"><label>Tên nhân vật</label><input id="name" required maxlength="40" placeholder="Ví dụ: Hàn Phong"></div>
       <div class="two"><div class="field"><label>Vai trò</label><select id="role"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option></select></div><div class="field"><label>Khung giờ</label><div id="time" class="time-buttons" role="group" aria-label="Khung giờ"><button type="button" class="time-btn" data-time="19:30">19:30</button><button type="button" class="time-btn" data-time="20:00">20:00</button><button type="button" class="time-btn" data-time="20:30">20:30</button><button type="button" class="time-btn" data-time="21:00">21:00</button><button type="button" class="time-btn" data-time="FULL">FULL KHUNG GIỜ</button></div></div></div>
-      <div class="actions"><button class="btn gold" type="submit">⚔ Đăng ký Bang Chiến</button><button class="btn discord" type="button" onclick="openDiscord()">💬 Discord</button></div>
+      <div class="actions"><button class="btn gold" type="submit">⚔ Đăng ký Bang Chiến</button></div>
       <div class="result" id="result"></div>
     </form>
   </div>
@@ -1002,7 +1041,7 @@ html, body, * {
 </div></section>
 </main>
 <footer aria-hidden="true"></footer>
-<div class="modal" id="modal"><div class="modal-box"><h2>Mẫu Chiến Thuật Discord</h2><p class="sub">Copy JSON hoặc nội dung kế hoạch để gửi cho đội trưởng.</p><div class="message" id="message"></div><div class="actions" style="margin-top:12px"><button class="btn gold" id="copyMessage">📋 Copy</button><button class="btn discord" onclick="openDiscord()">💬 Discord</button><button class="btn" onclick="closeModal()">Đóng</button></div></div></div>
+<div class="modal" id="successModal"><div class="modal-box" style="width:min(420px,100%);text-align:center;cursor:pointer" title="Kích chuột để tắt"><h2 style="font-size:32px;color:#f3d58b">Đã Đăng Ký</h2></div></div>
 <div class="modal" id="hotkeys"><div class="modal-box"><h2>⌨ Phím tắt</h2><p class="sub">Dùng nhanh khi đang điều phối.</p><div class="message">O — Boss / Objective\n1 — Blue Tower\n2 — Red Tower\n3 — Blue Tree\n4 — Red Tree\n5 — Blue Goose\n6 — Red Goose\nCtrl+Z — Undo\nCtrl+Y — Redo\nEsc — Hủy công cụ</div><div class="actions" style="margin-top:12px"><button class="btn" onclick="document.getElementById('hotkeys').classList.remove('show')">Đóng</button></div></div></div>
 
 <div class="modal" id="adminModal"><div class="modal-box" style="width:min(920px,100%)">
@@ -1054,6 +1093,7 @@ let guildMembers=readLocal('thiennam_guild_members',[]);
 let mapState=readLocal('thiennam_map',{markers:[],notes:[],draw:[],arrows:[]});
 let selectedPlayer=null, tool='', zoom=1, pan={x:0,y:0}, drawing=false, currentStroke=null, mapHistory=[],future=[];
 let adminSession=false, movingKey=null;
+Object.defineProperty(window,'guildMembers',{get:()=>guildMembers});
 let admins=readLocal('thiennam_admins',[{name:'ThiênNam',pin:'686868',role:'owner'}]);
 const saveTeams=()=>{localStorage.setItem('thiennam_teams',JSON.stringify(teams));save()};
 const saveAdmins=()=>{localStorage.setItem('thiennam_admins',JSON.stringify(admins));save()};
@@ -1274,11 +1314,9 @@ $('regForm').addEventListener('submit',e=>{
   if(duplicate){alert('Tên nhân vật này đã đăng ký trước đó.');return}
   const selectedTimes=[...document.querySelectorAll('#time .time-btn.active')].map(o=>o.dataset.time); if(!selectedTimes.length){alert('Vui lòng chọn ít nhất một khung giờ.');return} const times=selectedTimes.includes('FULL')?['FULL KHUNG GIỜ']:selectedTimes; const r={id:'reg-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name,role:$('role').value,time:times.join(', '),times,createdAt:new Date().toISOString()};
   registrations.push(r);save();renderAll();
-  const msg=`⚔️ **ĐĂNG KÝ BANG CHIẾN — GUILD THIÊN NAM**\n\n👤 Nhân vật: ${r.name}\n⚔️ Vai trò: ${r.role}\n🕒 Khung giờ: ${r.time}\n📝 Ghi chú: ${r.note}\n📋 Trạng thái: Chờ Admin xếp đội\n\n🔗 ${DISCORD_INVITE}`;
-  $('message').textContent=msg;$('modal').classList.add('show');$('result').textContent=`Đăng ký thành công! Bạn đang ở vị trí #${registrations.length}/100. Chờ Admin xếp vào đội hình 30 slot.`;$('result').classList.add('show');e.target.reset();
+  $('successModal').classList.add('show');setTimeout(()=>closeSuccessModal(),1800);$('result').textContent=`Đăng ký thành công! Bạn đang ở vị trí #${registrations.length}/100. Chờ Admin xếp vào đội hình 30 slot.`;$('result').classList.add('show');e.target.reset();
 });
-$('copyMessage').onclick=()=>navigator.clipboard?.writeText($('message').textContent).then(()=>toast('Đã copy mẫu Discord'));
-function openDiscord(){window.open(DISCORD_INVITE,'_blank')};function closeModal(){$('modal').classList.remove('show')};$('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+function openDiscord(){window.open(DISCORD_INVITE,'_blank')};function closeSuccessModal(){$('successModal').classList.remove('show')};$('successModal').addEventListener('click',()=>closeSuccessModal());
 
 // ===== Điều hướng các mục thành từng trang =====
 function showPage(id, updateHash=true){
@@ -1488,7 +1526,19 @@ function renderAdminSettings(){
   $('adminSettingsTab').innerHTML=`<div class="card" style="padding:14px"><h3 style="margin-top:0;color:#ecd18c">⚙ Đổi PIN Admin hiện tại</h3>
   <div class="two"><div class="field"><label>PIN mới</label><input id="changePin" type="password" placeholder="PIN mới"></div><div class="field"><label>Xác nhận PIN</label><input id="changePin2" type="password" placeholder="Nhập lại PIN"></div></div>
   <div class="actions" style="margin-top:10px"><button class="btn gold" onclick="changeMyPin()">Lưu PIN</button><button class="btn red" onclick="adminLogout()">🚪 Đăng xuất</button></div>
-  <p class="sub" style="margin-bottom:0">Đang đăng nhập: ${escapeHtml($('adminName').value||'Admin')}</p></div>`;
+  <p class="sub" style="margin-bottom:0">Đang đăng nhập: ${escapeHtml($('adminName').value||'Admin')}</p></div>
+  <div class="card discord-sync-settings">
+    <h3 style="margin:0;color:#ecd18c">🔗 Đồng bộ Thành Viên từ Discord</h3>
+    <p class="sub">Bot Discord sẽ đọc tin nhắn ở đúng kênh chỉ định rồi gửi dữ liệu về website. Bot Token không nằm trong file HTML.</p>
+    <div class="two">
+      <div class="field"><label>Channel ID</label><input value="1537978516812079174" readonly></div>
+      <div class="field"><label>API đồng bộ</label><input value="/api/discord-members" readonly></div>
+    </div>
+    <div class="actions" style="margin-top:10px">
+      <button class="btn blue" type="button" onclick="syncGuildMembersFromDiscord(true)">↻ Đồng bộ Discord ngay</button>
+    </div>
+    <p class="sub" id="adminDiscordSyncStatus" style="margin:10px 0 0">Trạng thái: chưa đồng bộ</p>
+  </div></div>`;
 }
 function changeMyPin(){
   const a=admins.find(x=>x.name===$('adminName').value.trim()), p=$('changePin').value, p2=$('changePin2').value;
@@ -1549,11 +1599,106 @@ function updatePrivateAdminView(){
 }
 
 $('addGuildMemberBtn')?.addEventListener('click',addGuildMember);
+
+// ===== Discord → Thành Viên Bang Hội =====
+// Chỉ chứa Channel ID và đường dẫn API công khai. Bot Token tuyệt đối không đặt trong HTML.
+const DISCORD_GUILD_CHANNEL_ID='1537978516812079174';
+const DISCORD_GUILD_SYNC_API=SUPABASE_BASE_URL+'/functions/v1/discord-members';
+const DISCORD_GUILD_SYNC_INTERVAL=30000;
+let discordGuildSyncTimer=null;
+let discordGuildSyncBusy=false;
+
+function setDiscordGuildSyncStatus(message,state=''){
+  const status=$('guildDiscordSyncStatus');
+  const dot=$('guildDiscordSyncDot');
+  if(status)status.textContent=message;
+  if(dot)dot.className='discord-sync-dot'+(state?' '+state:'');
+  const adminStatus=$('adminDiscordSyncStatus');
+  if(adminStatus)adminStatus.textContent='Trạng thái: '+message;
+}
+
+function mergeDiscordGuildMembers(items){
+  if(!Array.isArray(items))return 0;
+  let changed=0;
+  const normalize=s=>String(s??'').trim();
+  items.forEach(item=>{
+    const name=normalize(item.name||item.username||item.characterName);
+    const uid=normalize(item.uid||item.UID||item.userId);
+    const role=normalize(item.role||item.vaiTro||item.vaitro)||'Flex';
+    if(!name)return;
+
+    // UID là khóa ưu tiên; nếu chưa có UID thì dùng tên để tránh tạo bản sao.
+    const existing=(uid&&guildMembers.find(m=>normalize(m.uid)===uid)) ||
+                   guildMembers.find(m=>normalize(m.name).toLowerCase()===name.toLowerCase());
+    if(existing){
+      const before=JSON.stringify({name:existing.name,uid:existing.uid||'',role:existing.role||'Flex'});
+      existing.name=name;
+      if(uid)existing.uid=uid;
+      existing.role=role;
+      if(before!==JSON.stringify({name:existing.name,uid:existing.uid||'',role:existing.role||'Flex'}))changed++;
+    }else{
+      guildMembers.push({
+        id:'gm-discord-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),
+        name,uid,role,source:'discord',
+        discordChannelId:DISCORD_GUILD_CHANNEL_ID
+      });
+      changed++;
+    }
+  });
+  return changed;
+}
+
+async function syncGuildMembersFromDiscord(manual=false){
+  if(discordGuildSyncBusy)return;
+  discordGuildSyncBusy=true;
+  const btn=$('guildDiscordSyncBtn');
+  if(btn)btn.disabled=true;
+  setDiscordGuildSyncStatus(manual?'Đang đồng bộ...':'Đang kiểm tra Discord...');
+
+  try{
+    const url=DISCORD_GUILD_SYNC_API+'?channel_id='+encodeURIComponent(DISCORD_GUILD_CHANNEL_ID);
+    const response=await fetch(url,{method:'GET',headers:{'Accept':'application/json','apikey':SUPABASE_ANON_KEY},cache:'no-store'});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    const payload=await response.json();
+    const items=Array.isArray(payload)?payload:(payload.members||payload.data||[]);
+    if(!Array.isArray(items))throw new Error('API không trả về danh sách thành viên');
+
+    const changed=mergeDiscordGuildMembers(items);
+    if(changed){
+      save();
+      renderAll();
+      if(adminSession)renderAdmin();
+    }
+    const stamp=new Date().toLocaleTimeString('vi-VN');
+    setDiscordGuildSyncStatus(
+      changed?'Đã cập nhật '+changed+' thành viên • '+stamp:'Đã kiểm tra, không có thay đổi • '+stamp,
+      'online'
+    );
+  }catch(error){
+    console.warn('Discord guild sync:',error);
+    setDiscordGuildSyncStatus(
+      'Chưa kết nối API Bot • website vẫn hoạt động bình thường',
+      'error'
+    );
+  }finally{
+    discordGuildSyncBusy=false;
+    if(btn)btn.disabled=false;
+  }
+}
+
+function startDiscordGuildAutoSync(){
+  clearInterval(discordGuildSyncTimer);
+  syncGuildMembersFromDiscord(false);
+  discordGuildSyncTimer=setInterval(()=>syncGuildMembersFromDiscord(false),DISCORD_GUILD_SYNC_INTERVAL);
+}
+
 function renderAll(){
  updatePrivateAdminView();
  renderFormationRegistrationList();renderMembers();renderTeams();renderRegistrations();renderGuildMembers();renderMap();if(mapState.timer)startTimer()}
 renderAll();
 if(db){loadRemoteState();subscribeRemoteState()}
+startDiscordGuildAutoSync();
+$('guildDiscordSyncBtn')?.addEventListener('click',()=>syncGuildMembersFromDiscord(true));
 
 </script>
 

@@ -1,0 +1,2 @@
+[functions.discord-members]
+verify_jwt = false
