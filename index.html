@@ -1019,7 +1019,7 @@ html, body, * {
     <p class="sub">Tối đa <b style="color:#efd18a">100 người</b>. Chỉ cần đăng ký, Admin sẽ xếp vào 30 vị trí chiến đấu.</p>
     <form class="form" id="regForm">
       <div class="field"><label>Tên nhân vật</label><input id="name" required maxlength="40" placeholder="Ví dụ: Hàn Phong"></div>
-      <div class="two"><div class="field"><label>Vai trò</label><select id="role"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option></select></div><div class="field"><label>Khung giờ</label><div id="time" class="time-buttons" role="group" aria-label="Khung giờ"><button type="button" class="time-btn" data-time="19:30">19:30</button><button type="button" class="time-btn" data-time="20:00">20:00</button><button type="button" class="time-btn" data-time="20:30">20:30</button><button type="button" class="time-btn" data-time="21:00">21:00</button><button type="button" class="time-btn" data-time="FULL">FULL KHUNG GIỜ</button></div></div></div>
+      <div class="two"><div class="field"><label>Vai trò</label><select id="role"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option value="Khác">Khác</option></select><input id="customRole" maxlength="40" placeholder="Ví dụ: Vô danh, Cửu kiếm" style="display:none;margin-top:8px"></div><div class="field"><label>Khung giờ</label><div id="time" class="time-buttons" role="group" aria-label="Khung giờ"><button type="button" class="time-btn" data-time="19:30">19:30</button><button type="button" class="time-btn" data-time="20:00">20:00</button><button type="button" class="time-btn" data-time="20:30">20:30</button><button type="button" class="time-btn" data-time="21:00">21:00</button><button type="button" class="time-btn" data-time="FULL">FULL KHUNG GIỜ</button><button type="button" class="time-btn" data-time="SATURDAY">Thứ Bảy</button><button type="button" class="time-btn" data-time="SUNDAY">Chủ nhật</button></div></div></div>
       <div class="actions"><button class="btn gold" type="submit">⚔ Đăng ký Bang Chiến</button></div>
       <div class="result" id="result"></div>
     </form>
@@ -1463,9 +1463,9 @@ $('regForm').addEventListener('submit',e=>{
   const name=$('name').value.trim(); if(!name)return;
   const duplicate=registrations.some(r=>r.name.toLowerCase()===name.toLowerCase());
   if(duplicate){alert('Tên nhân vật này đã đăng ký trước đó.');return}
-  const selectedTimes=[...document.querySelectorAll('#time .time-btn.active')].map(o=>o.dataset.time); if(!selectedTimes.length){alert('Vui lòng chọn ít nhất một khung giờ.');return} const times=selectedTimes.includes('FULL')?['FULL KHUNG GIỜ']:selectedTimes; const r={id:'reg-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name,role:$('role').value,time:times.join(', '),times,createdAt:new Date().toISOString()};
+  const selectedTimes=[...document.querySelectorAll('#time .time-btn.active')].map(o=>o.dataset.time); if(!selectedTimes.length){alert('Vui lòng chọn ít nhất một khung giờ.');return} const times=selectedTimes.includes('FULL')?['FULL KHUNG GIỜ']:selectedTimes; const selectedRole=$('role').value; const customRole=$('customRole')?.value.trim(); if(selectedRole==='Khác'&&!customRole){alert('Vui lòng nhập vai trò khác.');return} const role=selectedRole==='Khác'?customRole:selectedRole; const r={id:'reg-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name,role,time:times.join(', '),times,createdAt:new Date().toISOString()};
   registrations.push(r);save();renderAll();
-  $('successModal').classList.add('show');setTimeout(()=>closeSuccessModal(),1800);$('result').textContent=`Đăng ký thành công! Bạn đang ở vị trí #${registrations.length}/100. Chờ Admin xếp vào đội hình 30 slot.`;$('result').classList.add('show');e.target.reset();
+  $('successModal').classList.add('show');setTimeout(()=>closeSuccessModal(),1800);$('result').textContent=`Đăng ký thành công! Bạn đang ở vị trí #${registrations.length}/100. Chờ Admin xếp vào đội hình 30 slot.`;$('result').classList.add('show');e.target.reset();const cr=$('customRole');if(cr){cr.value='';cr.style.display='none'};
 });
 function openDiscord(){window.open(DISCORD_INVITE,'_blank')};function closeSuccessModal(){$('successModal').classList.remove('show')};$('successModal').addEventListener('click',()=>closeSuccessModal());
 
@@ -1703,8 +1703,8 @@ function renderFormationRegistrationList(){
  const unassigned=registrations.filter(r=>!r.assigned);
  if(c)c.textContent=(registrations.length+guildMembers.length)+"";
  const wc=document.getElementById("formationWaitingCount"); if(wc)wc.textContent=unassigned.length;
- const timeGroups = ["19:30","20:00","20:30","21:00","FULL KHUNG GIỜ"];
- const grouped=timeGroups.map(time=>({time,members:unassigned.filter(r=>{const times=Array.isArray(r.times)?r.times:String(r.time||"").split(',').map(x=>x.trim());return time==="FULL KHUNG GIỜ"?times.includes("FULL KHUNG GIỜ"):times.includes(time);})})).filter(g=>g.members.length);
+ const timeGroups = ["19:30","20:00","20:30","21:00","Thứ Bảy","Chủ nhật","FULL KHUNG GIỜ"];
+ const grouped=timeGroups.map(time=>({time,members:unassigned.filter(r=>{const times=Array.isArray(r.times)?r.times:String(r.time||"").split(',').map(x=>x.trim());return time==="FULL KHUNG GIỜ"?times.includes("FULL KHUNG GIỜ"):time==="Thứ Bảy"?times.includes("SATURDAY"):time==="Chủ nhật"?times.includes("SUNDAY"):times.includes(time);})})).filter(g=>g.members.length);
  const regCard=r=>`<div class="reg-drag-card" draggable="true" data-reg-id="${r.id}"><b>${escapeHtml(r.name)}</b><span>${escapeHtml(r.role||"")}</span><small>${escapeHtml(r.time||"")}</small></div>`;
  const regHtml=grouped.map(g=>`<div class="waiting-time-group"><div class="waiting-time-title">🕒 ${escapeHtml(g.time)} <span>${g.members.length}</span></div>${g.members.map(regCard).join('')}</div>`).join('');
  el.innerHTML=regHtml||'<div class="empty-reg">Chưa có thành viên chờ xếp</div>';
@@ -1998,6 +1998,7 @@ $('guildDiscordSyncBtn')?.addEventListener('click',()=>syncGuildMembersFromDisco
   else arrangeFormationLayout();
 })();
 </script>
+<script>document.addEventListener("change",function(e){if(e.target.id!=="role")return;const input=document.getElementById("customRole");if(!input)return;input.style.display=e.target.value==="Khác"?"block":"none";if(e.target.value!=="Khác")input.value="";});</script>
 <script>document.addEventListener('click',function(e){const b=e.target.closest('#time .time-btn');if(!b)return;const all=document.querySelectorAll('#time .time-btn');if(b.dataset.time==='FULL'){all.forEach(x=>x.classList.remove('active'));b.classList.add('active')}else{document.querySelector('#time .time-btn[data-time="FULL"]').classList.remove('active');b.classList.toggle('active')}});</script>
 <style id="registration-guild-right-final">
 /* CHỈ ĐỔI VỊ TRÍ: Thành viên bang hội sang bên phải, cạnh Đội hình */
