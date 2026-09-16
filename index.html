@@ -182,6 +182,15 @@ main { width:100% !important; max-width:none !important; margin:0 !important; pa
 @media(max-width:900px){#teams .formation-side-layout{grid-template-columns:1fr!important;}#teams .formation-side-layout>*{grid-column:auto!important;}#teams .formation-side-layout > #privateRegistrationList{order:1;}#teams .guild-roster-side{order:2;}#teams .formation-main-area{order:3;}}
 </style>
 
+<style id="formation-copy-image-style">
+  #teams .formation-quick-actions{display:flex;justify-content:flex-end;gap:8px;margin-bottom:8px}
+  #teams #copyFormationImageBtn{min-height:31px}
+  @media(max-width:680px){
+    #teams .formation-quick-actions{justify-content:stretch}
+    #teams #copyFormationImageBtn{width:100%}
+  }
+</style>
+
 <style id="wwm-inspired-theme">
 /* =========================================================
    THIÊN NAM — WUXIA / WHERE WINDS MEET INSPIRED THEME
@@ -1035,6 +1044,9 @@ html, body, * {
     <div style="margin-top:10px"><input id="guildRosterSideSearch" placeholder="🔎 Tìm tên thành viên..." style="width:100%"></div><div id="guildRosterSideList" style="display:grid;gap:7px;max-height:560px;overflow:auto;margin-top:10px"></div>
   </div>
   <div class="formation-main-area admin-private" id="privateFormation">
+    <div class="formation-quick-actions">
+      <button class="btn small gold" id="copyFormationImageBtn" type="button">📋 Copy ảnh đội hình Công • Thủ</button>
+    </div>
     <div class="drop-hint">🖱️ Chỉ Admin mới có quyền phân đội: kéo người từ danh sách <b>Thành viên chờ xếp</b> hoặc <b>Thành viên bang hội</b> vào Slot trống.</div>
     <div class="team-grid" id="teamsGrid"></div>
   </div>
@@ -2000,6 +2012,73 @@ $('guildDiscordSyncBtn')?.addEventListener('click',()=>syncGuildMembersFromDisco
 </script>
 <script>document.addEventListener("change",function(e){if(e.target.id!=="role")return;const input=document.getElementById("customRole");if(!input)return;input.style.display=e.target.value==="Khác"?"block":"none";if(e.target.value!=="Khác")input.value="";});</script>
 <script>document.addEventListener('click',function(e){const b=e.target.closest('#time .time-btn');if(!b)return;const all=document.querySelectorAll('#time .time-btn');if(b.dataset.time==='FULL'){all.forEach(x=>x.classList.remove('active'));b.classList.add('active')}else{document.querySelector('#time .time-btn[data-time="FULL"]').classList.remove('active');b.classList.toggle('active')}});</script>
+<script>
+(function(){
+  let html2canvasPromise=null;
+
+  function loadHtml2Canvas(){
+    if(window.html2canvas) return Promise.resolve(window.html2canvas);
+    if(html2canvasPromise) return html2canvasPromise;
+    html2canvasPromise=new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      s.onload=()=>window.html2canvas?resolve(window.html2canvas):reject(new Error('html2canvas unavailable'));
+      s.onerror=()=>reject(new Error('Không tải được công cụ chụp ảnh'));
+      document.head.appendChild(s);
+    });
+    return html2canvasPromise;
+  }
+
+  async function copyFormationImage(){
+    const target=document.getElementById('teamsGrid');
+    const btn=document.getElementById('copyFormationImageBtn');
+    if(!target || !target.children.length){
+      toast('Chưa có đội hình để chụp');
+      return;
+    }
+
+    const oldText=btn?btn.innerHTML:'';
+    if(btn){btn.disabled=true;btn.innerHTML='⏳ Đang chụp...';}
+
+    try{
+      const html2canvas=await loadHtml2Canvas();
+      const canvas=await html2canvas(target,{
+        backgroundColor:'#080b0c',
+        scale:Math.min(2,Math.max(1,window.devicePixelRatio||1)),
+        useCORS:true,
+        logging:false
+      });
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+      if(!blob) throw new Error('Không tạo được ảnh');
+
+      if(navigator.clipboard && window.ClipboardItem && window.isSecureContext){
+        await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+        toast('Đã copy ảnh đội hình Công • Thủ');
+      }else{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url;
+        a.download='doi-hinh-cong-thu.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),1000);
+        toast('Trình duyệt không hỗ trợ copy ảnh — đã tạo ảnh PNG');
+      }
+    }catch(err){
+      console.error('Copy formation image failed:',err);
+      toast('Không thể chụp/copy ảnh đội hình');
+    }finally{
+      if(btn){btn.disabled=false;btn.innerHTML=oldText;}
+    }
+  }
+
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest('#copyFormationImageBtn');
+    if(btn) copyFormationImage();
+  });
+})();
+</script>
 <style id="registration-guild-right-final">
 /* CHỈ ĐỔI VỊ TRÍ: Thành viên bang hội sang bên phải, cạnh Đội hình */
 @media(min-width:1201px){
