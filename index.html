@@ -1748,8 +1748,17 @@ function renderFormationRegistrationList(){
  const unassigned=registrations.filter(r=>!r.assigned);
  if(c)c.textContent=(registrations.length+guildMembers.length)+"";
  const wc=document.getElementById("formationWaitingCount"); if(wc)wc.textContent=unassigned.length;
- const timeGroups = ["19:30","20:00","20:30","21:00","Thứ Bảy","Chủ nhật","FULL KHUNG GIỜ"];
- const grouped=timeGroups.map(time=>({time,members:unassigned.filter(r=>{const times=Array.isArray(r.times)?r.times:String(r.time||"").split(',').map(x=>x.trim());return time==="FULL KHUNG GIỜ"?times.includes("FULL KHUNG GIỜ"):time==="Thứ Bảy"?times.includes("SATURDAY"):time==="Chủ nhật"?times.includes("SUNDAY"):times.includes(time);})})).filter(g=>g.members.length);
+ // Chỉ hiển thị 3 nhóm chờ xếp: Thứ Bảy, Chủ nhật và FULL KHUNG GIỜ.
+ // Người không đăng ký Thứ Bảy/Chủ nhật được đưa vào nhóm FULL KHUNG GIỜ.
+ const timeGroups = ["Thứ Bảy","Chủ nhật","FULL KHUNG GIỜ"];
+ const grouped=timeGroups.map(time=>({time,members:unassigned.filter(r=>{
+   const times=Array.isArray(r.times)?r.times:String(r.time||"").split(',').map(x=>x.trim());
+   const isSaturday=times.includes("SATURDAY");
+   const isSunday=times.includes("SUNDAY");
+   if(time==="Thứ Bảy") return isSaturday;
+   if(time==="Chủ nhật") return isSunday;
+   return times.includes("FULL KHUNG GIỜ") || (!isSaturday && !isSunday);
+ })})).filter(g=>g.members.length);
  const regCard=r=>`<div class="reg-drag-card" draggable="true" data-reg-id="${r.id}"><b>${escapeHtml(r.name)}</b><span>${escapeHtml(r.role||"")}</span><small>${escapeHtml(r.time||"")}</small></div>`;
  const regHtml=grouped.map(g=>`<div class="waiting-time-group"><div class="waiting-time-title">🕒 ${escapeHtml(g.time)} <span>${g.members.length}</span></div>${g.members.map(regCard).join('')}</div>`).join('');
  el.innerHTML=regHtml||'<div class="empty-reg">Chưa có thành viên chờ xếp</div>';
