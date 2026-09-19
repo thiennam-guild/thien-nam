@@ -931,6 +931,41 @@ html, body, * {
 }
 </style>
 
+
+<style id="formation-role-colors">
+/* Màu vai trò trong ô vị trí đội hình — chỉ thay đổi màu nhận diện vai trò */
+#teams .slot.role-song-dao{border-color:#d65a5a!important;background:linear-gradient(180deg,rgba(214,90,90,.20),rgba(11,9,7,.92))!important}
+#teams .slot.role-healer{border-color:#55c98a!important;background:linear-gradient(180deg,rgba(85,201,138,.20),rgba(11,9,7,.92))!important}
+#teams .slot.role-tanker{border-color:#5f9cff!important;background:linear-gradient(180deg,rgba(95,156,255,.20),rgba(11,9,7,.92))!important}
+#teams .slot.role-quyen{border-color:#e56bb1!important;background:linear-gradient(180deg,rgba(229,107,177,.20),rgba(11,9,7,.92))!important}
+#teams .slot.role-vo-danh{border-color:#b388ff!important;background:linear-gradient(180deg,rgba(179,136,255,.20),rgba(11,9,7,.92))!important}
+#teams .slot.role-cuu-kiem{border-color:#ffd54f!important;background:linear-gradient(180deg,rgba(255,213,79,.20),rgba(11,9,7,.92))!important}
+#teams .slot.role-hoanh-dao{border-color:#ffb74d!important;background:linear-gradient(180deg,rgba(255,183,77,.20),rgba(11,9,7,.92))!important}
+#teams .slot.role-quat-du-nem{border-color:#4dd0e1!important;background:linear-gradient(180deg,rgba(77,208,225,.20),rgba(11,9,7,.92))!important}
+#teams .slot.role-quat-du-cong{border-color:#64b5f6!important;background:linear-gradient(180deg,rgba(100,181,246,.20),rgba(11,9,7,.92))!important}
+#teams .slot-role{font-weight:800}
+#teams .slot.role-song-dao .slot-role{color:#ff6b6b!important}
+#teams .slot.role-healer .slot-role{color:#66e6a3!important}
+#teams .slot.role-tanker .slot-role{color:#62a8ff!important}
+#teams .slot.role-quyen .slot-role{color:#ff78c8!important}
+#teams .slot.role-vo-danh .slot-role{color:#b8c0cc!important}
+#teams .slot.role-cuu-kiem .slot-role{color:#ffd45c!important}
+#teams .slot.role-hoanh-dao .slot-role{color:#ffb74d!important}
+#teams .slot.role-quat-du-nem .slot-role{color:#4dd0e1!important}
+#teams .slot.role-quat-du-cong .slot-role{color:#64b5f6!important}
+</style>
+<style id="formation-role-colors-final">
+/* CHỈ ĐỔI MÀU VAI TRÒ TRONG Ô ĐỘI HÌNH */
+#teams .slot.filled{border-color:#2196f3!important;background:linear-gradient(180deg,rgba(33,150,243,.22),rgba(11,9,7,.92))!important}
+#teams .slot.filled .slot-role{color:#42a5f5!important}
+#teams .slot.role-tanker{border-color:#ffd54f!important;background:linear-gradient(180deg,rgba(255,213,79,.24),rgba(11,9,7,.92))!important}
+#teams .slot.role-tanker .slot-role{color:#ffd54f!important}
+#teams .slot.role-healer{border-color:#4caf50!important;background:linear-gradient(180deg,rgba(76,175,80,.24),rgba(11,9,7,.92))!important}
+#teams .slot.role-healer .slot-role{color:#66bb6a!important}
+#teams .slot.role-khac{border-color:#f44336!important;background:linear-gradient(180deg,rgba(244,67,54,.24),rgba(11,9,7,.92))!important}
+#teams .slot.role-khac .slot-role{color:#ff5252!important}
+#teams .slot.role-song-dao .slot-role,#teams .slot.role-quyen .slot-role,#teams .slot.role-vo-danh .slot-role,#teams .slot.role-cuu-kiem .slot-role,#teams .slot.role-hoanh-dao .slot-role,#teams .slot.role-quat-du-nem .slot-role,#teams .slot.role-quat-du-cong .slot-role{color:#42a5f5!important}
+</style>
 </head>
 <body>
 
@@ -1323,7 +1358,7 @@ function renderTeams(){
         return `<div class="team" data-team="${t.id}">
           <div class="team-top"><strong>${escapeHtml(t.icon)} ${escapeHtml(t.name)}</strong><small>${a.filter(Boolean).length}/${teamCapacity(t)}</small></div>
           <div class="bar"><i style="width:${Math.min(100,a.filter(Boolean).length/teamCapacity(t)*100)}%"></i></div>
-          <div class="slots">${Array.from({length:teamCapacity(t)},(_,i)=>i+1).map(n=>{let p=a[n-1];return `<div class="slot ${p?'filled':''}" data-team="${t.id}" data-slot="${n}" ${adminSession?'draggable="true"':''}><div class="slot-number">${n}</div>${p?`<b class="slot-name">${escapeHtml(p.name)}</b><small class="slot-role">Vai trò cá nhân: ${escapeHtml(p.role||'Chưa chọn')}</small>`:`<span class="slot-empty">Trống</span>`}</div>`}).join('')}</div>
+          <div class="slots">${Array.from({length:teamCapacity(t)},(_,i)=>i+1).map(n=>{let p=a[n-1];return `<div class="slot ${p?'filled':''} ${p?'role-'+String(p.role||'Chưa chọn').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-'):''}" data-team="${t.id}" data-slot="${n}" ${adminSession?'draggable="true"':''}><div class="slot-number">${n}</div>${p?`<b class="slot-name">${escapeHtml(p.name)}</b><small class="slot-role">Vai trò cá nhân: ${escapeHtml(p.role||'Chưa chọn')}</small>`:`<span class="slot-empty">Trống</span>`}</div>`}).join('')}</div>
           ${adminSession?`<div class="actions" style="margin-top:8px"><button class="btn small blue" onclick="openMoveForTeam('${t.id}')">🔄 Sắp xếp</button><button class="btn small" onclick="editTeam('${t.id}')">✏ Sửa</button></div>`:''}
         </div>`
       }).join('')}</div>
