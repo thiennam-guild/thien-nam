@@ -541,6 +541,10 @@ header>div:last-child{position:absolute!important;right:clamp(16px,3vw,54px)!imp
 }
 </style>
 
+<style id="strategy-members-admin-only">
+#strategy .strategy-members-private{display:none!important}
+#strategy .strategy-members-private.strategy-members-visible{display:block!important}
+</style>
 <style id="strategy-draw-arrow-cursor-fix">
 /* FIX: Công cụ Vẽ / Mũi tên bám đúng con trỏ chuột */
 #strategy .map-viewport{cursor:default!important}
@@ -1024,7 +1028,7 @@ html, body, * {
 
 <section class="layout page-section" id="strategy">
 <aside class="side">
-<section class="card"><div class="section-title"><h2>👥 Thành Viên</h2><span class="tag" id="memberCount">0/30</span></div><div class="filters"><input id="search" placeholder="Tìm tên người chơi..."><div class="toggle"><button class="btn small active" id="groupBtn">Theo đội</button><button class="btn small" id="allBtn">Tất cả</button></div><select id="roleFilter"><option value="all">Tất cả vai trò</option><option>DPS</option><option>Healer</option><option>Tanker</option></select></div><div class="members" id="members"></div></section>
+<section class="card strategy-members-private"><div class="section-title"><h2>👥 Thành Viên</h2><span class="tag" id="memberCount">0/30</span></div><div class="filters"><input id="search" placeholder="Tìm tên người chơi..."><div class="toggle"><button class="btn small active" id="groupBtn">Theo đội</button><button class="btn small" id="allBtn">Tất cả</button></div><select id="roleFilter"><option value="all">Tất cả vai trò</option><option>DPS</option><option>Healer</option><option>Tanker</option></select></div><div class="members" id="members"></div></section>
 <section class="card"><h2>🧰 Công Cụ</h2><p class="sub">Chọn công cụ rồi thao tác trên bản đồ.</p><div class="tools"><button class="btn gold" data-tool="boss">BOSS</button><button class="btn blue" data-tool="blueTower">B.Tower</button><button class="btn red" data-tool="redTower">R.Tower</button><button class="btn green" data-tool="blueTree">B.Tree</button><button class="btn red" data-tool="redTree">R.Tree</button><button class="btn blue" data-tool="blueGoose">B.Goose</button><button class="btn red" data-tool="redGoose">R.Goose</button><button class="btn" data-tool="note">📝 Note</button><button class="btn" data-tool="timer">⏱ Timer</button><button class="btn" data-tool="clear">🧹 Xóa</button></div><div class="actions" style="margin-top:9px"><button class="btn small" id="undo">↶ Undo</button><button class="btn small" id="redo">↷ Redo</button><button class="btn small" id="resetView">⊙ Reset map</button><button class="btn small" id="fullscreen">⛶ Fullscreen</button></div></section>
 <section class="card"><h2>💾 Chiến Thuật</h2><p class="sub">Lưu hoặc chuyển kế hoạch cho đội trưởng.</p><div class="actions"><button class="btn small" id="exportBtn">📥 Export</button><button class="btn small" id="importBtn">📤 Import</button><button class="btn small" id="hotkeysBtn">⌨ Hotkeys</button></div><input type="file" id="importFile" accept="application/json" hidden></section>
 </aside>
@@ -1800,6 +1804,10 @@ function deleteGuildMember(id){
 
 function updatePrivateAdminView(){
   const isAdmin=!!adminSession;
+  // Chỉ Admin mới thấy phần Thành viên trong Chiến thuật.
+  document.querySelectorAll("#strategy .strategy-members-private").forEach(el=>{
+    el.classList.toggle("strategy-members-visible",isAdmin);
+  });
   // Chỉ ẩn: Thành viên chờ xếp và Thành viên bang hội.
   // Đội hình Công • Thủ luôn hiển thị; quyền chỉnh sửa vẫn chỉ dành cho Admin.
   document.querySelectorAll("#privateRegistrationList,#guildRosterSide").forEach(el=>{
