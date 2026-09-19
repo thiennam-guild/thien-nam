@@ -1799,8 +1799,14 @@ function deleteGuildMember(id){
 }
 
 function updatePrivateAdminView(){
- const isAdmin=!!adminSession;
- document.querySelectorAll(".admin-private").forEach(el=>el.classList.toggle("private-hidden",!isAdmin));
+  const isAdmin=!!adminSession;
+  // Chỉ ẩn: Thành viên chờ xếp và Thành viên bang hội.
+  // Đội hình Công • Thủ luôn hiển thị; quyền chỉnh sửa vẫn chỉ dành cho Admin.
+  document.querySelectorAll("#privateRegistrationList,#guildRosterSide").forEach(el=>{
+    el.classList.toggle("private-hidden",!isAdmin);
+  });
+  const formation=document.getElementById("privateFormation");
+  if(formation) formation.classList.remove("private-hidden");
 }
 
 $('addGuildMemberBtn')?.addEventListener('click',addGuildMember);
