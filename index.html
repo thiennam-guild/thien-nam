@@ -966,6 +966,84 @@ html, body, * {
 #teams .slot.role-khac .slot-role{color:#ff5252!important}
 #teams .slot.role-song-dao .slot-role,#teams .slot.role-quyen .slot-role,#teams .slot.role-vo-danh .slot-role,#teams .slot.role-cuu-kiem .slot-role,#teams .slot.role-hoanh-dao .slot-role,#teams .slot.role-quat-du-nem .slot-role,#teams .slot.role-quat-du-cong .slot-role{color:#42a5f5!important}
 </style>
+<style id="formation-day-switch-style">#teams .formation-day-switch{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 12px;padding:8px;border:1px solid rgba(201,164,92,.22);background:rgba(8,11,12,.62)}#teams .formation-day-switch .formation-day-current{margin-left:8px;color:#c9b58e;font-size:11px;letter-spacing:.4px}@media(max-width:680px){#teams .formation-day-switch{flex-wrap:wrap}.formation-day-current{width:100%;text-align:center;margin-left:0!important}}</style>
+
+<style id="formation-cong-thu-layout-final">
+/* CHỈ sửa bố cục khu vực Đội hình Công / Thủ:
+   nút ngày nằm riêng một hàng, CÔNG và THỦ nằm cùng một hàng */
+#teams #teamsGrid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:10px!important;
+  align-items:start!important;
+}
+#teams #teamsGrid > .formation-day-switch{
+  grid-column:1 / -1!important;
+  grid-row:1!important;
+  justify-self:center!important;
+  align-self:center!important;
+  margin:0 auto 4px!important;
+}
+#teams #teamsGrid > .formation-column{
+  min-width:0!important;
+  width:auto!important;
+  margin:0!important;
+}
+#teams #teamsGrid > .formation-column.attack-column{
+  grid-column:1!important;
+  grid-row:2!important;
+}
+#teams #teamsGrid > .formation-column.defense-column{
+  grid-column:2!important;
+  grid-row:2!important;
+}
+
+/* Nút Thứ Bảy / Chủ nhật nhỏ gọn */
+#teams #teamsGrid > .formation-day-switch{
+  display:flex!important;
+  width:max-content!important;
+  max-width:100%!important;
+  padding:2px!important;
+  gap:2px!important;
+}
+#teams #teamsGrid > .formation-day-switch .btn.small{
+  min-width:0!important;
+  width:auto!important;
+  height:22px!important;
+  min-height:22px!important;
+  padding:2px 6px!important;
+  font-size:8px!important;
+  line-height:1!important;
+}
+#teams #teamsGrid > .formation-day-switch .formation-day-current{
+  margin-left:2px!important;
+  padding:0 3px!important;
+  font-size:8px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:900px){
+  #teams #teamsGrid{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    gap:6px!important;
+  }
+}
+@media(max-width:600px){
+  #teams #teamsGrid{
+    grid-template-columns:1fr!important;
+  }
+  #teams #teamsGrid > .formation-day-switch{
+    grid-column:1!important;
+  }
+  #teams #teamsGrid > .formation-column.attack-column,
+  #teams #teamsGrid > .formation-column.defense-column{
+    grid-column:1!important;
+    grid-row:auto!important;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -1155,6 +1233,12 @@ const readLocal=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)
 let teams=readLocal('thiennam_teams',DEFAULT_TEAMS);
 teams.forEach(t=>{t.slots=Math.min(30,Math.max(1,Number(t.slots)||5));});
 let roster=readLocal('thiennam_roster',{});
+let formationDay=readLocal('thiennam_formation_day','SATURDAY');
+let rostersByDay=readLocal('thiennam_rosters_by_day',null);
+if(!rostersByDay || typeof rostersByDay!=='object'){rostersByDay={SATURDAY:roster,SUNDAY:{}};localStorage.setItem('thiennam_rosters_by_day',JSON.stringify(rostersByDay));}
+if(!rostersByDay.SATURDAY)rostersByDay.SATURDAY=roster;
+if(!rostersByDay.SUNDAY)rostersByDay.SUNDAY={};
+roster=rostersByDay[formationDay]||{};
 let registrations=readLocal('thiennam_registrations',[]);
 let guildMembers=readLocal('thiennam_guild_members',[]);
 let mapState=readLocal('thiennam_map',{markers:[],notes:[],draw:[],arrows:[]});
@@ -1162,13 +1246,33 @@ let selectedPlayer=null, tool='', zoom=1, pan={x:0,y:0}, drawing=false, currentS
 let adminSession=false, movingKey=null;
 Object.defineProperty(window,'guildMembers',{get:()=>guildMembers});
 let admins=readLocal('thiennam_admins',[{name:'ThiênNam',pin:'686868',role:'owner'}]);
+function saveFormationDayState(){
+  rostersByDay[formationDay]=roster;
+  localStorage.setItem('thiennam_rosters_by_day',JSON.stringify(rostersByDay));
+  localStorage.setItem('thiennam_formation_day',formationDay);
+  localStorage.setItem('thiennam_roster',JSON.stringify(roster));
+}
+function switchFormationDay(day){
+  if(day!=='SATURDAY'&&day!=='SUNDAY')return;
+  rostersByDay[formationDay]=roster; formationDay=day; roster=rostersByDay[formationDay]||{};
+  saveFormationDayState(); renderAll();
+}
+function formationRegistrationIsAvailableForDay(r,day){
+  const times=Array.isArray(r.times)?r.times:String(r.time||'').split(',').map(x=>x.trim());
+  if(times.includes('FULL KHUNG GIỜ'))return true;
+  return day==='SATURDAY'?times.includes('SATURDAY'):day==='SUNDAY'?times.includes('SUNDAY'):false;
+}
+function registrationAssignedOnDay(r,day){
+  const rr=rostersByDay[day]||{};
+  return Object.values(rr).some(arr=>(arr||[]).some(p=>p&&p.registrationId&&String(p.registrationId)===String(r.id)));
+}
 const saveTeams=()=>{localStorage.setItem('thiennam_teams',JSON.stringify(teams));save()};
 const saveAdmins=()=>{localStorage.setItem('thiennam_admins',JSON.stringify(admins));save()};
 const $=id=>document.getElementById(id);
 let remoteWriteInProgress=false;
 let remoteLoadInProgress=false;
 let remoteSaveTimer=null;
-const statePayload=()=>({teams,roster,registrations,guildMembers,mapState});
+const statePayload=()=>({teams,roster,rostersByDay,formationDay,registrations,guildMembers,mapState});
 
 // ===== NORMALIZED SUPABASE STORAGE =====
 // 3 domain APIs/tables:
@@ -1225,6 +1329,7 @@ async function saveNormalizedState(){
     const results=await Promise.all(ops);
     const failed=results.find(x=>x.error);
     if(failed?.error)throw failed.error;
+    await db.from('tn_app_state').upsert({id:1,state:{teams,rostersByDay,formationDay,registrations,guildMembers,mapState}},{onConflict:'id'});
 
     // Remove records that no longer exist in the browser state.
     const regIds=registrationRows.map(x=>x.id);
@@ -1257,7 +1362,7 @@ async function saveNormalizedState(){
 
 function save(){
   localStorage.setItem('thiennam_teams',JSON.stringify(teams));
-  localStorage.setItem('thiennam_roster',JSON.stringify(roster));
+  saveFormationDayState();
   localStorage.setItem('thiennam_map',JSON.stringify(mapState));
   localStorage.setItem('thiennam_registrations',JSON.stringify(registrations));
   localStorage.setItem('thiennam_guild_members',JSON.stringify(guildMembers));
@@ -1286,7 +1391,10 @@ async function loadRemoteState(){
       if(!legacy.error && legacy.data?.state){
         const s=legacy.data.state;
         if(Array.isArray(s.teams))teams=s.teams;
-        if(s.roster&&typeof s.roster==='object')roster=s.roster;
+        if(s.rostersByDay&&typeof s.rostersByDay==='object')rostersByDay=s.rostersByDay;
+        else if(s.roster&&typeof s.roster==='object')rostersByDay={SATURDAY:s.roster,SUNDAY:{}};
+        if(s.formationDay==='SUNDAY'||s.formationDay==='SATURDAY')formationDay=s.formationDay;
+        roster=rostersByDay[formationDay]||{};
         if(Array.isArray(s.registrations))registrations=s.registrations;
         if(Array.isArray(s.guildMembers))guildMembers=s.guildMembers;
         if(s.mapState&&typeof s.mapState==='object')mapState=s.mapState;
@@ -1323,6 +1431,19 @@ async function loadRemoteState(){
       ...(m.discord_user_id?{discordUserId:m.discord_user_id}:{}),
       ...(m.username?{username:m.username}:{}),
     }));
+    const dayState=await db.from('tn_app_state').select('state').eq('id',1).maybeSingle();
+    if(!dayState.error&&dayState.data?.state){
+      const s=dayState.data.state;
+      if(s.rostersByDay&&typeof s.rostersByDay==='object')rostersByDay=s.rostersByDay;
+      if(s.formationDay==='SATURDAY'||s.formationDay==='SUNDAY')formationDay=s.formationDay;
+      roster=rostersByDay[formationDay]||{};
+      saveFormationDayState();
+    }else{
+      rostersByDay.SATURDAY=rostersByDay.SATURDAY&&Object.keys(rostersByDay.SATURDAY).length?rostersByDay.SATURDAY:roster;
+      if(!rostersByDay.SUNDAY)rostersByDay.SUNDAY={};
+      roster=rostersByDay[formationDay]||{};
+      saveFormationDayState();
+    }
     renderAll();
   }catch(error){
     console.error('Supabase normalized load failed:',error);
@@ -1349,26 +1470,15 @@ function teamCapacity(t){return Math.min(30,Math.max(1,Number(t?.slots)||5))}
 function renderMembers(){let q=$('search').value.toLowerCase(),rf=$('roleFilter').value,group=$('groupBtn').classList.contains('active');let arr=allPlayers().filter(p=>(!q||p.name.toLowerCase().includes(q)||String(p.discord).toLowerCase().includes(q))&&(rf==='all'||p.role===rf));$('memberCount').textContent=total()+'/30';let html='';if(group){for(const t of teams){const ps=arr.filter(p=>p.team===t.id);if(!ps.length)continue;html+=`<div style="color:#cfae6b;font-weight:900;font-size:11px;margin:8px 0 3px">${t.name}</div>`+ps.map(memberHTML).join('')}}else html=arr.map(memberHTML).join('');$('members').innerHTML=html||'<div class="sub">Chưa có thành viên phù hợp.</div>'}
 function memberHTML(p){return `<div class="member ${selectedPlayer?.key===p.key?'selected':''}" draggable="true" data-key="${p.key}"><div class="member-top"><b>${escapeHtml(p.name)}</b><span class="role ${p.role}">${p.role}</span></div><small>${p.teamName} • Slot ${p.slot} • ${escapeHtml(p.discord||'')}</small></div>`}
 function renderTeams(){
+  const dayName=formationDay==='SATURDAY'?'Thứ Bảy':'Chủ nhật';
   const renderGroup=(type,icon,title,desc)=>{
     const group=teams.filter(t=>String(t.type||'').toUpperCase()===type);
-    return `<div class="formation-column ${type==='CÔNG'?'attack-column':'defense-column'}">
-      <div class="formation-column-head"><div class="formation-emblem">${icon}</div><div><h3>${title}</h3><p>${desc}</p></div><span>${group.reduce((n,t)=>n+(roster[t.id]||[]).filter(Boolean).length,0)}/15</span></div>
-      <div class="formation-teams">${group.map(t=>{
-        let a=roster[t.id]||[];
-        return `<div class="team" data-team="${t.id}">
-          <div class="team-top"><strong>${escapeHtml(t.icon)} ${escapeHtml(t.name)}</strong><small>${a.filter(Boolean).length}/${teamCapacity(t)}</small></div>
-          <div class="bar"><i style="width:${Math.min(100,a.filter(Boolean).length/teamCapacity(t)*100)}%"></i></div>
-          <div class="slots">${Array.from({length:teamCapacity(t)},(_,i)=>i+1).map(n=>{let p=a[n-1];return `<div class="slot ${p?'filled':''} ${p?'role-'+String(p.role||'Chưa chọn').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-'):''}" data-team="${t.id}" data-slot="${n}" ${adminSession?'draggable="true"':''}><div class="slot-number">${n}</div>${p?`<b class="slot-name">${escapeHtml(p.name)}</b><small class="slot-role">Vai trò cá nhân: ${escapeHtml(p.role||'Chưa chọn')}</small>`:`<span class="slot-empty">Trống</span>`}</div>`}).join('')}</div>
-          ${adminSession?`<div class="actions" style="margin-top:8px"><button class="btn small blue" onclick="openMoveForTeam('${t.id}')">🔄 Sắp xếp</button><button class="btn small" onclick="editTeam('${t.id}')">✏ Sửa</button></div>`:''}
-        </div>`
-      }).join('')}</div>
-    </div>`;
+    return `<div class="formation-column ${type==='CÔNG'?'attack-column':'defense-column'}"><div class="formation-column-head"><div class="formation-emblem">${icon}</div><div><h3>${title}</h3><p>${desc}</p></div><span>${group.reduce((n,t)=>n+(roster[t.id]||[]).filter(Boolean).length,0)}/15</span></div><div class="formation-teams">${group.map(t=>{let a=roster[t.id]||[];return `<div class="team" data-team="${t.id}"><div class="team-top"><strong>${escapeHtml(t.icon)} ${escapeHtml(t.name)}</strong><small>${a.filter(Boolean).length}/${teamCapacity(t)}</small></div><div class="bar"><i style="width:${Math.min(100,a.filter(Boolean).length/teamCapacity(t)*100)}%"></i></div><div class="slots">${Array.from({length:teamCapacity(t)},(_,i)=>i+1).map(n=>{let p=a[n-1];return `<div class="slot ${p?'filled':''} ${p?'role-'+String(p.role||'Chưa chọn').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-'):''}" data-team="${t.id}" data-slot="${n}" ${adminSession?'draggable="true"':''}><div class="slot-number">${n}</div>${p?`<b class="slot-name">${escapeHtml(p.name)}</b><small class="slot-role">Vai trò cá nhân: ${escapeHtml(p.role||'Chưa chọn')}</small>`:`<span class="slot-empty">Trống</span>`}</div>`}).join('')}</div>${adminSession?`<div class="actions" style="margin-top:8px"><button class="btn small blue" onclick="openMoveForTeam('${t.id}')">🔄 Sắp xếp</button><button class="btn small" onclick="editTeam('${t.id}')">✏ Sửa</button></div>`:''}</div>`}).join('')}</div></div>`;
   };
-  $('teamsGrid').innerHTML=renderGroup('CÔNG','⚔️','ĐỘI HÌNH CÔNG','Tiên phong • áp sát • phá tuyến')+renderGroup('THỦ','🛡️','ĐỘI HÌNH THỦ','Phòng tuyến • bảo vệ • giữ mục tiêu');
-  $('totalCounter').textContent=total()+'/'+totalCapacity();
-  $('manageTeamsBtn').style.display=adminSession?'inline-block':'none';
-  bindTeamDrops();
+  $('teamsGrid').innerHTML=`<div class="formation-day-switch"><button type="button" class="btn small ${formationDay==='SATURDAY'?'gold':''}" onclick="switchFormationDay('SATURDAY')">📅 Thứ Bảy</button><button type="button" class="btn small ${formationDay==='SUNDAY'?'gold':''}" onclick="switchFormationDay('SUNDAY')">📅 Chủ nhật</button><span class="formation-day-current">Đang xem: ${dayName}</span></div>`+renderGroup('CÔNG','⚔️','ĐỘI HÌNH CÔNG','Tiên phong • áp sát • phá tuyến')+renderGroup('THỦ','🛡️','ĐỘI HÌNH THỦ','Phòng tuyến • bảo vệ • giữ mục tiêu');
+  $('totalCounter').textContent=total()+'/'+totalCapacity(); $('manageTeamsBtn').style.display=adminSession?'inline-block':'none'; bindTeamDrops();
 }
+
 function bindTeamDrops(){
   document.querySelectorAll('#teamsGrid .slot').forEach(el=>{
     el.draggable=!!adminSession;
@@ -1451,29 +1561,30 @@ function assignRegistrationToSlot(key,tid,index){
   if(existing && !(from===tid&&fromIdx===index)){toast('Slot này đã có người');return}
   if(from!==null){roster[from]=roster[from]||[];roster[from][fromIdx]=null}
   roster[tid][index]=p;
-  if(reg){reg.assigned=teams.find(t=>t.id===tid)?.name+' • Slot '+(index+1);reg.team=tid;reg.slot=index+1}
-  save();renderAll();if(adminSession)renderAdmin();toast('Đã xếp '+p.name+' vào '+(teams.find(t=>t.id===tid)?.name||'đội')+' • Slot '+(index+1));
+  saveFormationDayState();
+  save();renderAll();if(adminSession)renderAdmin();toast('Đã xếp '+p.name+' vào '+(teams.find(t=>t.id===tid)?.name||'đội')+' • Slot '+(index+1)+' • '+(formationDay==='SATURDAY'?'Thứ Bảy':'Chủ nhật'));
 }
 
-function removeRegistration(id){if(!adminSession)return;let r=findRegistration(id);if(!r)return;if(!confirm('Xóa đăng ký của '+r.name+'?'))return;registrations=registrations.filter(x=>String(x.id)!==String(id));save();renderAll();renderAdmin();toast('Đã xóa đăng ký')}
+function removeRegistration(id){if(!adminSession)return;let r=findRegistration(id);if(!r)return;if(!confirm('Xóa đăng ký của '+r.name+'?'))return;Object.keys(rostersByDay).forEach(day=>Object.keys(rostersByDay[day]||{}).forEach(tid=>{rostersByDay[day][tid]=(rostersByDay[day][tid]||[]).map(p=>p&&p.registrationId&&String(p.registrationId)===String(id)?null:p)}));roster=rostersByDay[formationDay]||{};registrations=registrations.filter(x=>String(x.id)!==String(id));saveFormationDayState();save();renderAll();renderAdmin();toast('Đã xóa đăng ký')}
 function deleteAllRegistrations(){
   if(!adminSession)return;
   if(!registrations.length){toast('Danh sách đăng ký đang trống');return}
   if(!confirm(`Bạn có chắc muốn XÓA TOÀN BỘ ${registrations.length} đăng ký trước? Hành động này không thể hoàn tác.`))return;
   const registrationIds=new Set(registrations.map(r=>String(r.id)));
-  Object.keys(roster).forEach(tid=>{
-    roster[tid]=(roster[tid]||[]).map(p=>{
+  Object.keys(rostersByDay).forEach(day=>Object.keys(rostersByDay[day]||{}).forEach(tid=>{
+    rostersByDay[day][tid]=(rostersByDay[day][tid]||[]).map(p=>{
       if(p && p.registrationId && registrationIds.has(String(p.registrationId))) return null;
       return p;
     });
-  });
-  registrations=[];
+  }));
+  roster=rostersByDay[formationDay]||{};
+  registrations=[]; saveFormationDayState();
   save();
   renderAll();
   renderAdmin();
   toast('Đã xóa toàn bộ danh sách đăng ký trước');
 }
-function unassignRegistration(id){if(!adminSession)return;let r=findRegistration(id);if(!r||!r.team)return;let arr=roster[r.team]||[];let idx=(Number(r.slot)||1)-1;if(arr[idx]?.registrationId===r.id){arr[idx]=null}delete r.assigned;delete r.team;delete r.slot;save();renderAll();renderAdmin();toast('Đã đưa '+r.name+' về danh sách chờ')}
+function unassignRegistration(id){if(!adminSession)return;let r=findRegistration(id);if(!r)return;let removed=false;Object.keys(roster).forEach(tid=>{let arr=roster[tid]||[];arr.forEach((p,i)=>{if(p&&p.registrationId&&String(p.registrationId)===String(r.id)){arr[i]=null;removed=true;}})});if(!removed){toast('Thành viên chưa được xếp ở ngày hiện tại');return}saveFormationDayState();save();renderAll();renderAdmin();toast('Đã đưa '+r.name+' về danh sách chờ')}
 $('members').addEventListener('click',e=>{let el=e.target.closest('.member');if(!el)return;selectedPlayer=allPlayers().find(p=>p.key===el.dataset.key)||null;tool='placePlayer';$('toolStatus').textContent=selectedPlayer?`Đã chọn: ${selectedPlayer.name} • click map để đặt`:'';renderMembers();});
 $('members').addEventListener('dragstart',e=>{let el=e.target.closest('.member');if(el)e.dataTransfer.setData('text/plain',el.dataset.key)});
 function stagePoint(e){const r=$('stage').getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100}}
@@ -1660,9 +1771,8 @@ function deleteTeam(id){
 function resetWaitingMembers(){
   if(!adminSession)return;
   const assigned=allPlayers(); if(!assigned.length){toast('Không có thành viên nào đang xếp đội');return}
-  if(!confirm(`Reset ${assigned.length} thành viên khỏi đội hình và đưa tất cả về danh sách chờ xếp?`))return;
-  assigned.forEach(p=>{const r=findRegistration(p.registrationId);if(r){delete r.assigned;delete r.team;delete r.slot;}});
-  teams.forEach(t=>{roster[t.id]=[]}); save(); renderAll(); renderAdmin(); toast('Đã reset thành viên về danh sách chờ xếp');
+  if(!confirm(`Reset ${assigned.length} thành viên khỏi đội hình ${formationDay==='SATURDAY'?'Thứ Bảy':'Chủ nhật'} và đưa tất cả về danh sách chờ xếp?`))return;
+  teams.forEach(t=>{roster[t.id]=[]}); saveFormationDayState(); save(); renderAll(); renderAdmin(); toast('Đã reset thành viên về danh sách chờ xếp');
 }
 
 function resetTeams(){
@@ -1740,7 +1850,9 @@ $('moveConfirm').onclick=()=>{
 
 function renderAdminRegistrations(){
   const box=$('adminRegistrationsTab'); if(!box)return;
-  box.innerHTML=`<div class="card" style="padding:14px"><div class="section-title"><div><h3 style="margin:0;color:#ecd18c">📝 Danh sách đăng ký trước</h3><p class="sub">Tổng ${registrations.length}/100 • Kéo người vào Slot ở trang Đội hình.</p></div><div style="display:flex;gap:6px;align-items:center"><span class="tag">${registrations.filter(r=>!r.assigned).length} chờ xếp</span><button class="btn small red" onclick="resetWaitingMembers()">↩ Reset chờ xếp</button><button class="btn small red" onclick="deleteAllRegistrations()">🗑 Xóa toàn bộ đăng ký</button></div></div><div class="admin-reg-list">${registrations.length?registrations.map((r,i)=>`<div class="admin-reg-item" draggable="true" data-reg-admin="${r.id}"><div class="reg-num">${i+1}</div><div><b>${escapeHtml(r.name)}</b><small>${escapeHtml(r.role)} • ${escapeHtml(r.time)} • ${escapeHtml(r.note||'Không có')}${r.assigned?' • '+escapeHtml(r.assigned):''}</small></div><div class="admin-reg-actions">${r.assigned?`<button class="btn small blue" onclick="unassignRegistration('${r.id}')">↩ Bỏ xếp</button>`:''}<button class="btn small red" onclick="removeRegistration('${r.id}')">Xóa</button></div></div>`).join(''):'<div class="sub">Chưa có đăng ký.</div>'}</div></div>`;
+  const dayName=formationDay==='SATURDAY'?'Thứ Bảy':'Chủ nhật';
+  const waitingCount=registrations.filter(r=>formationRegistrationIsAvailableForDay(r,formationDay)&&!registrationAssignedOnDay(r,formationDay)).length;
+  box.innerHTML=`<div class="card" style="padding:14px"><div class="section-title"><div><h3 style="margin:0;color:#ecd18c">📝 Danh sách đăng ký trước</h3><p class="sub">Tổng ${registrations.length}/100 • Ngày đang xem: ${dayName} • Kéo người vào Slot ở trang Đội hình.</p></div><div style="display:flex;gap:6px;align-items:center"><span class="tag">${waitingCount} chờ xếp</span><button class="btn small red" onclick="resetWaitingMembers()">↩ Reset chờ xếp</button><button class="btn small red" onclick="deleteAllRegistrations()">🗑 Xóa toàn bộ đăng ký</button></div></div><div class="admin-reg-list">${registrations.length?registrations.map((r,i)=>{const assigned=registrationAssignedOnDay(r,formationDay);return `<div class="admin-reg-item" draggable="true" data-reg-admin="${r.id}"><div class="reg-num">${i+1}</div><div><b>${escapeHtml(r.name)}</b><small>${escapeHtml(r.role)} • ${escapeHtml(r.time)} • ${escapeHtml(r.note||'Không có')}${assigned?' • Đã xếp '+dayName:''}</small></div><div class="admin-reg-actions">${assigned?`<button class="btn small blue" onclick="unassignRegistration('${r.id}')">↩ Bỏ xếp</button>`:''}<button class="btn small red" onclick="removeRegistration('${r.id}')">Xóa</button></div></div>`}).join(''):'<div class="sub">Chưa có đăng ký.</div>'}</div></div>`;
   box.querySelectorAll('[data-reg-admin]').forEach(el=>el.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','reg:'+el.dataset.regAdmin)));
 }
 
@@ -1783,29 +1895,22 @@ function changeMyPin(){
 function adminLogout(){adminSession=false;$('adminPanel').style.display='none';$('adminLogin').style.display='block';$('adminPin').value='';renderAll();closeAdmin();toast('Đã đăng xuất Admin')}
 
 function renderFormationRegistrationList(){
- const el=document.getElementById("formationRegistrationList"); const c=document.getElementById("formationRegCount"); if(!el)return;
- const unassigned=registrations.filter(r=>!r.assigned);
- if(c)c.textContent=(registrations.length+guildMembers.length)+"";
- const wc=document.getElementById("formationWaitingCount"); if(wc)wc.textContent=unassigned.length;
- // Chỉ hiển thị 3 nhóm chờ xếp: Thứ Bảy, Chủ nhật và FULL KHUNG GIỜ.
- // Người không đăng ký Thứ Bảy/Chủ nhật được đưa vào nhóm FULL KHUNG GIỜ.
- const timeGroups = ["Thứ Bảy","Chủ nhật","FULL KHUNG GIỜ"];
- const grouped=timeGroups.map(time=>({time,members:unassigned.filter(r=>{
-   const times=Array.isArray(r.times)?r.times:String(r.time||"").split(',').map(x=>x.trim());
-   const isSaturday=times.includes("SATURDAY");
-   const isSunday=times.includes("SUNDAY");
-   if(time==="Thứ Bảy") return isSaturday;
-   if(time==="Chủ nhật") return isSunday;
-   return times.includes("FULL KHUNG GIỜ") || (!isSaturday && !isSunday);
- })})).filter(g=>g.members.length);
- const regCard=r=>`<div class="reg-drag-card" draggable="true" data-reg-id="${r.id}"><b>${escapeHtml(r.name)}</b><span>${escapeHtml(r.role||"")}</span><small>${escapeHtml(r.time||"")}</small></div>`;
- const regHtml=grouped.map(g=>`<div class="waiting-time-group"><div class="waiting-time-title">🕒 ${escapeHtml(g.time)} <span>${g.members.length}</span></div>${g.members.map(regCard).join('')}</div>`).join('');
- el.innerHTML=regHtml||'<div class="empty-reg">Chưa có thành viên chờ xếp</div>';
+ const el=document.getElementById('formationRegistrationList'); const c=document.getElementById('formationRegCount'); if(!el)return;
+ const waiting=registrations.filter(r=>formationRegistrationIsAvailableForDay(r,formationDay)&&!registrationAssignedOnDay(r,formationDay));
+ if(c)c.textContent=(registrations.length+guildMembers.length)+'';
+ const wc=document.getElementById('formationWaitingCount'); if(wc)wc.textContent=waiting.length;
+ const dayTitle=formationDay==='SATURDAY'?'Thứ Bảy':'Chủ nhật';
+ const full=waiting.filter(r=>(Array.isArray(r.times)?r.times:String(r.time||'').split(',')).includes('FULL KHUNG GIỜ'));
+ const dayOnly=waiting.filter(r=>!full.includes(r));
+ const regCard=r=>`<div class="reg-drag-card" draggable="true" data-reg-id="${r.id}"><b>${escapeHtml(r.name)}</b><span>${escapeHtml(r.role||'')}</span><small>${escapeHtml(r.time||'')}</small></div>`;
+ let html='';
+ if(dayOnly.length)html+=`<div class="waiting-time-group"><div class="waiting-time-title">🕒 ${dayTitle} <span>${dayOnly.length}</span></div>${dayOnly.map(regCard).join('')}</div>`;
+ if(full.length)html+=`<div class="waiting-time-group"><div class="waiting-time-title">🕒 FULL KHUNG GIỜ <span>${full.length}</span></div>${full.map(regCard).join('')}</div>`;
+ el.innerHTML=html||'<div class="empty-reg">Chưa có thành viên chờ xếp</div>';
  el.querySelectorAll('[data-reg-id]').forEach(card=>card.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','reg:'+card.dataset.regId);e.dataTransfer.effectAllowed='move';}));
- bindWaitingDropZone();
- bindGuildRosterDropZone();
- renderGuildRosterSide();
+ bindWaitingDropZone(); bindGuildRosterDropZone(); renderGuildRosterSide();
 }
+
 function renderGuildRosterSide(){
  const el=document.getElementById('guildRosterSideList'); const count=document.getElementById('guildRosterSideCount'); if(!el)return;
  const q=(document.getElementById('guildRosterSideSearch')?.value||'').trim().toLowerCase();
@@ -1831,10 +1936,10 @@ function addGuildMember(){
  guildMembers.push({id:'gm-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name,uid,role}); save(); renderAll(); renderGuildMembers(); toast('Đã thêm '+name+' vào Thành Viên Bang Hội'); $('guildNameInput').value=''; $('guildUidInput').value='';
 }
 function editGuildMember(id){
- if(!adminSession)return; const m=guildMembers.find(x=>x.id===id); if(!m)return; const name=prompt('Tên thành viên:',m.name); if(name===null)return; const uid=prompt('UID (chỉ Admin):',m.uid||''); if(uid===null)return; const role=prompt('Vai trò:',m.role||'DPS'); if(role===null)return; m.name=name.trim()||m.name; m.uid=uid.trim(); m.role=role.trim()||m.role; allPlayers().forEach(p=>{if(p.guildMemberId===m.id){const arr=roster[p.team]||[];if(arr[p.slot-1]){arr[p.slot-1].name=m.name;arr[p.slot-1].role=m.role}}}); save(); renderAll(); renderGuildMembers(); toast('Đã cập nhật thành viên');
+ if(!adminSession)return; const m=guildMembers.find(x=>x.id===id); if(!m)return; const name=prompt('Tên thành viên:',m.name); if(name===null)return; const uid=prompt('UID (chỉ Admin):',m.uid||''); if(uid===null)return; const role=prompt('Vai trò:',m.role||'DPS'); if(role===null)return; m.name=name.trim()||m.name; m.uid=uid.trim(); m.role=role.trim()||m.role; Object.keys(rostersByDay).forEach(day=>Object.values(rostersByDay[day]||{}).forEach(arr=>(arr||[]).forEach(p=>{if(p&&p.guildMemberId===m.id){p.name=m.name;p.role=m.role}}))); roster=rostersByDay[formationDay]||{}; saveFormationDayState(); save(); renderAll(); renderGuildMembers(); toast('Đã cập nhật thành viên');
 }
 function deleteGuildMember(id){
- if(!adminSession)return; const m=guildMembers.find(x=>x.id===id); if(!m)return; const assigned=allPlayers().filter(p=>p.guildMemberId===id); if(assigned.length){if(!confirm(m.name+' đang ở đội hình. Xóa sẽ đưa người này về chờ xếp. Tiếp tục?'))return; assigned.forEach(p=>{roster[p.team][p.slot-1]=null;});} else if(!confirm('Xóa '+m.name+' khỏi danh sách bang hội?'))return; guildMembers=guildMembers.filter(x=>x.id!==id); save(); renderAll(); renderGuildMembers(); toast('Đã xóa thành viên bang hội');
+ if(!adminSession)return; const m=guildMembers.find(x=>x.id===id); if(!m)return; const assigned=allPlayers().filter(p=>p.guildMemberId===id); if(assigned.length){if(!confirm(m.name+' đang ở đội hình. Xóa sẽ đưa người này về chờ xếp. Tiếp tục?'))return; Object.keys(rostersByDay).forEach(day=>Object.keys(rostersByDay[day]||{}).forEach(tid=>{rostersByDay[day][tid]=(rostersByDay[day][tid]||[]).map(p=>p&&p.guildMemberId===id?null:p)}));} else if(!confirm('Xóa '+m.name+' khỏi danh sách bang hội?'))return; roster=rostersByDay[formationDay]||{}; guildMembers=guildMembers.filter(x=>x.id!==id); saveFormationDayState(); save(); renderAll(); renderGuildMembers(); toast('Đã xóa thành viên bang hội');
 }
 
 function updatePrivateAdminView(){
