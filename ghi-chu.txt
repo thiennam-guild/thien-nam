@@ -1,0 +1,10 @@
+TIÊN LÃO — 200 QUẺ BÓI VUI
+
+Mở index.html và chọn Tiên Lão trên thanh điều hướng.
+Gồm 100 quẻ Tình duyên và 100 quẻ Tài lộc. Mỗi quẻ có tên và lời phán riêng.
+Mỗi ngày bốc ngẫu nhiên một quẻ cho từng mục. Không hiện số lượng hay số thứ tự quẻ. Quẻ được giữ qua lần tải lại trang bằng lưu trữ của trình duyệt; mở lượt mới theo ngày trên thiết bị. Nội dung nhập vai giang hồ Where Winds Meet. Đây là giới hạn cục bộ, không đồng bộ tài khoản giữa các thiết bị.
+Ảnh trưởng lão được nhúng trực tiếp trong index.html, không cần tệp ảnh kèm theo.
+Bản gốc trong Downloads không bị ghi đè. Các chức năng và tài nguyên mạng của trang gốc được giữ lại.
+
+Ảnh được tạo bằng công cụ imagegen tích hợp. Prompt đã dùng:
+Use case: stylized-concept. Create one polished chibi wuxia guild elder mascot for a Vietnamese dark gold martial arts guild website. Full body seated cross-legged floating, oversized head, fluffy white eyebrows, long white moustache and beard, white hair topknot with antique gold pin, funny knowing mischievous smile, one eyebrow raised, holding a small tea cup and folded fan. Luxurious charcoal and muted jade robes with antique gold trim. Charming expressive original game character, painterly 3D illustration with clean silhouette. Warm gold rim lighting, centered full character with generous margins, square composition, plain very dark charcoal #080c10 background. No text, no letters, no logos, no interface. Return saved image file.
