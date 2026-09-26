@@ -4105,7 +4105,15 @@ body:has(#tienlao.active){overflow-y:auto!important;background:#080c10!important
   const storageKey='thiennam.tienlao.daily.v1';
   const el=id=>document.getElementById(id);
   let topic='love',busy=false,storageFailed=false,records={};
-  function today(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+  const vietnamOffsetMs=7*60*60*1000;
+  let midnightTimer;
+  function today(){return new Date(Date.now()+vietnamOffsetMs).toISOString().slice(0,10);}
+  function scheduleMidnight(){
+    clearTimeout(midnightTimer);
+    const now=Date.now(),dayMs=24*60*60*1000;
+    const delay=dayMs-((now+vietnamOffsetMs)%dayMs)+50;
+    midnightTimer=setTimeout(()=>{refresh();scheduleMidnight();},delay);
+  }
   function read(){
     try{const raw=localStorage.getItem(storageKey);records=raw?JSON.parse(raw):{};
       if(!records||typeof records!=='object'||Array.isArray(records))records={};storageFailed=false;
@@ -4166,9 +4174,10 @@ body:has(#tienlao.active){overflow-y:auto!important;background:#080c10!important
     catch{el('tl-status').textContent='Hãy chọn và sao chép quẻ bên trên; trình duyệt chưa cho phép sao chép tự động.';const range=document.createRange();range.setStartBefore(el('tl-lead'));range.setEndAfter(el('tl-advice'));const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);}
   });
   window.addEventListener('storage',e=>{if(e.key===storageKey||e.key===null)refresh();});
-  window.addEventListener('focus',refresh);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
-  setInterval(refresh,60000);refresh();
+  window.addEventListener('focus',()=>{refresh();scheduleMidnight();});
+  window.addEventListener('pageshow',()=>{refresh();scheduleMidnight();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){refresh();scheduleMidnight();}});
+  setInterval(refresh,60000);refresh();scheduleMidnight();
 })();
 </script><style id="tl-effect-fix">/* A single reveal sequence, scoped to the oracle card. */
 #tienlao .tl-scroll{isolation:isolate;transform-origin:50% 55%;backface-visibility:hidden}
