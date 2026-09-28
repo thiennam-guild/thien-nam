@@ -5018,4 +5018,16 @@ body.cat-live-nav:has(#meono.active) #cat-nav-reveal{position:static!important;i
 }
 #meono #cat-hand .cat-card{grid-template-columns:minmax(0,1fr)}
 #meono #cat-hand .cat-card>b,#meono #cat-hand .cat-card>.cat-art{box-sizing:border-box;max-width:100%;min-width:0}
+/* Desktop: keep both piles beside the clock, leaving the right corner for action controls. */
+@media(min-width:1024px){
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] .cat-table{grid-template-columns:minmax(0,1fr) 100px minmax(180px,260px) 100px minmax(0,1fr);column-gap:12px}
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] .cat-piles>.cat-pile-side:first-child{grid-column:2;grid-row:1/5}
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] .cat-piles>.cat-pile-side:last-child{grid-column:4;grid-row:1/5}
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-turn,
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-note,
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-turn-metrics,
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-effect-rail,
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-wait,
+ body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-time-warning{grid-column:3}
+}
 </style></body></html>
