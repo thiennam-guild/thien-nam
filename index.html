@@ -4431,7 +4431,7 @@ body:has(#meono.active) main{height:auto!important;min-height:calc(100dvh - var(
   el.addEventListener('focus',()=>{if(matchMedia('(hover:hover)').matches)showHover(c,el)});el.addEventListener('blur',hideHover);el.addEventListener('pointerdown',hideHover);
  }
  function handEntries(){let a=state.me.hand.map((card,index)=>({card,index}));if(sortedHand&&!state.players[state.me.index].cursed)a.sort((a,b)=>kindRank[cardKind(a.card)]-kindRank[cardKind(b.card)]||cards[a.card][1].localeCompare(cards[b.card][1],'vi')||a.index-b.index);return a;}
- function arrangeHand(){
+ function arrangeHand(){updateHandView();if(handView==='grid'){$('cat-hand').style.height='auto';return;}
   const hand=$('cat-hand'),nodes=[...hand.querySelectorAll('.cat-card')];if(!nodes.length){hand.style.height='0px';return;}
   hand.classList.add('cat-layout-updating');const width=hand.clientWidth,mobile=width<580,cardW=mobile?70:112,cardH=mobile?105:157;
   const maxPerRow=Math.max(1,Math.min(mobile?6:14,1+Math.floor(Math.max(0,width-cardW-28)/(cardW*.6)))),rows=Math.ceil(nodes.length/maxPerRow),perRow=Math.ceil(nodes.length/rows),rowH=cardH+(mobile?17:26);
@@ -4545,7 +4545,7 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
  const table=document.querySelector('#meono .cat-table'),metrics=document.createElement('div');metrics.id='cat-turn-metrics';metrics.innerHTML='<div><small>LƯỢT RÚT CÒN LẠI</small><b id="cat-draws-left">—</b></div><div><small id="cat-clock-label">THỜI GIAN LƯỢT</small><b id="cat-turn-clock">—</b></div>';$('cat-note').after(metrics);
  const effectRail=document.createElement('div');effectRail.id='cat-effect-rail';effectRail.setAttribute('aria-hidden','true');table.append(effectRail);
  function updateTableClock(){if(!state)return;$('cat-room').dataset.status=state.status;const playing=state.status==='playing';metrics.hidden=!playing;$('cat-wait').hidden=playing&&connected&&state.players[state.me.index].alive;$('cat-draws-left').textContent=playing?state.debt+' lượt':'—';const phase=state.pending?.phase,due=phase?state.pending.due:state.turnDeadline;$('cat-clock-label').textContent=phase?'ĐANG XỬ LÝ · '+(phase==='reaction'?'NOPE':'HÀNH ĐỘNG'):'THỜI GIAN LƯỢT';if(!playing){$('cat-turn-clock').textContent='—';return;}if(!due){$('cat-turn-clock').textContent='Cần SQL v5.3';return;}const left=Math.max(0,Math.ceil((Date.parse(due)-Date.now()-serverClockOffset)/1000));$('cat-turn-clock').textContent=left?String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0'):'Đang cập nhật…';metrics.classList.toggle('cat-clock-urgent',left<=10);}
- setInterval(updateTableClock,1000);
+ setInterval(()=>{updateTableClock();updateTurnWarning();},1000);
 
  const cardInspector=$('cat-inspector');table.append(cardInspector);cardInspector.setAttribute('role','region');cardInspector.setAttribute('aria-label','Sử dụng lá bài đang chọn');document.addEventListener('keydown',e=>{if(e.key==='Escape'&&inspected&&!publicDialog.open){inspected=null;renderInspector();}});
 
@@ -4579,6 +4579,34 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
   for(const [id,info] of Object.entries(originalCardInfo)){cards[id][1]=theme==='hero'?(heroNames[id]||info[1]):info[1];cards[id][2]=info[2];}
   if(theme==='hero')for(const id of Object.keys(cards)){let help=originalCardInfo[id][2];for(const [from,to] of Object.entries(heroNames).map(([k,v])=>[originalCardInfo[k]?.[1],v]).filter(([k])=>k).sort((a,b)=>b[0].length-a[0].length))help=help.replaceAll(from,to);cards[id][2]=help+' (Tương ứng: '+originalCardInfo[id][1]+'.)';}
   renderCatalog();
+ }
+
+ let handView='fan';try{handView=localStorage.getItem('tn.cat.handView')||(touchGameNav()?'grid':'fan');}catch{handView=touchGameNav()?'grid':'fan';}if(!['fan','grid'].includes(handView))handView='fan';
+ const viewButton=document.createElement('button');viewButton.id='cat-hand-view';viewButton.type='button';$('cat-sort').before(viewButton);viewButton.onclick=()=>{handView=handView==='grid'?'fan':'grid';try{localStorage.setItem('tn.cat.handView',handView);}catch{}hideHover();arrangeHand();};
+ function updateHandView(){const grid=handView==='grid';$('cat-hand').classList.toggle('cat-grid-hand',grid);viewButton.textContent=grid?'Dạng xòe':'Dạng lưới';viewButton.setAttribute('aria-pressed',String(grid));viewButton.setAttribute('aria-label',grid?'Chuyển sang bài xòe':'Chuyển sang lưới bài');}
+ const shortHero={cat_taco:'Bánh Cuốn',cat_melon:'Dưa Hấu',cat_potato:'Khoai Tây',cat_rainbow:'Ngũ Sắc',cat_beard:'Lão Ngoan',reverse:'Đảo Càn Khôn',bottom:'Lao Nguyệt',alter3:'Dịch Mệnh 3',alter5:'Dịch Mệnh 5',target_attack:'Truy Hồn Tiễn',super_skip:'Vạn Lý Hành',peek5:'Thiên Nhãn 5',swap:'Hoán Vị',garbage:'Thu Nạp',catomic:'Phần Thiên',mark:'Chu Sa',alter_now:'Nghịch Thời',take:'Diệu Thủ',personal:'Hỗ Bác',share:'Đồng Tâm',implode_up:'Hắc Liên Ngửa'};
+ function handCardName(c){return state?.theme==='hero'?(shortHero[c]||cards[c][1]):cards[c][1];}
+ document.querySelector('#meono .cat-room-bar').append(navReveal);
+ const foldButton=document.createElement('button');foldButton.id='cat-panel-toggle';foldButton.type='button';foldButton.hidden=true;table.append(foldButton);let panelKey='',panelFolded=false;
+ function updatePanelFold(){
+  const visible=!!state&&(!$('cat-inspector').hidden||!$('cat-pending').hidden||!$('cat-combo-panel').hidden||!$('cat-peek').hidden);
+  const key=state?[state.code,state.pending?.phase,state.pending?.actor,state.pending?.due,inspected?.index,inspected?.card,comboMode].join('|'):'';
+  if(key!==panelKey){panelFolded=false;panelKey=key;}
+  foldButton.hidden=!visible;table.classList.toggle('cat-panels-folded',visible&&panelFolded);table.classList.toggle('cat-has-panels',visible);foldButton.textContent=panelFolded?'Mở thao tác ▾':'Thu gọn ▴';foldButton.setAttribute('aria-expanded',String(!panelFolded));
+ }
+ foldButton.onclick=()=>{panelFolded=!panelFolded;updatePanelFold();};
+ function renderInspector(){renderInspectorContents();updatePanelFold();}
+ function renderPending(){renderPendingContents();updatePanelFold();}
+ const timeWarning=document.createElement('p');timeWarning.id='cat-time-warning';timeWarning.setAttribute('role','status');timeWarning.hidden=true;metrics.after(timeWarning);let warnedTurn='';
+ function updateTurnWarning(){
+  const live=state?.status==='playing'&&!state.pending;
+  if(!live){timeWarning.hidden=true;return;}
+  const now=Date.now()+serverClockOffset,remaining=Math.ceil((Date.parse(state.turnDeadline)-now)/1000),grace=remaining<=0&&state.turnEliminationDeadline;
+  const own=state.turn===state.me.index&&state.players[state.me.index].alive;
+  timeWarning.hidden=remaining>30||(!own&&!grace);if(timeWarning.hidden)return;
+  if(grace){const seconds=Math.max(0,Math.ceil((Date.parse(state.turnEliminationDeadline)-now)/1000));$('cat-clock-label').textContent='THỜI GIAN CHỜ THÊM';$('cat-turn-clock').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');timeWarning.textContent=own?'Còn '+seconds+' giây chờ thêm. Hãy thực hiện lượt để tránh bị loại.':'Đang chờ '+(state.players[state.turn]?.name||'người chơi')+' · '+seconds+' giây.';}
+  else timeWarning.textContent='Lượt của bạn còn '+Math.max(0,remaining)+' giây'+(state.turnGraceSeconds?' · Sau đó có 60 giây chờ thêm.':'.');
+  const key=state.code+'|'+state.turnDeadline;if(own&&warnedTurn!==key){warnedTurn=key;playSound('yourturn');}
  }
 
  try{session=JSON.parse(localStorage.getItem(key));if(!session||!/^[a-f0-9-]{36}$/i.test(session.token)||!/^[A-F0-9]{8}$/.test(session.code))session=null;}catch{session=null;}
@@ -4631,7 +4659,7 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
   $('cat-phase').textContent=state.status==='waiting'?'SẢNH CHỜ · '+state.players.length+'/10 NGƯỜI':state.status==='finished'?'VÁN ĐÃ KẾT THÚC':'ĐANG CHƠI';
   $('cat-turn').textContent=state.status==='waiting'?'Đủ hội, bắt đầu thôi!':state.status==='finished'?state.note:myTurn?'Đến lượt bạn':(turn?.name||'')+' đang chơi';
   $('cat-note').textContent=state.note;
-  $('cat-wait').textContent=!connected?'Mất kết nối · đang thử lại…':state.status==='waiting'?'Chủ phòng bắt đầu khi có ít nhất 2 người.':state.status==='playing'?(!own.alive?'Bạn đã bị loại, có thể theo dõi đến cuối ván.':`Còn ${state.debt} lượt cần hoàn thành. Lượt quá 2 phút sẽ bị loại.`):'Chủ phòng có thể mở sảnh để chơi tiếp.';
+  $('cat-wait').textContent=!connected?'Mất kết nối · đang thử lại…':state.status==='waiting'?'Chủ phòng bắt đầu khi có ít nhất 2 người.':state.status==='playing'?(!own.alive?'Bạn đã bị loại, có thể theo dõi đến cuối ván.':`Còn ${state.debt} lượt cần hoàn thành. ${state.turnGraceSeconds?'Lượt 2 phút, thêm 60 giây chờ trước khi bị loại.':'Lượt quá 2 phút sẽ bị loại. Cập nhật SQL v5.6 để có thời gian chờ thêm.'}`):'Chủ phòng có thể mở sảnh để chơi tiếp.';
   const host=state.me.id===state.host;
   $('cat-start').hidden=state.status!=='waiting'||!host;$('cat-start').disabled=busy||state.players.length<2||!connected||state.rulesVersion<5;
   $('cat-reset').hidden=state.status!=='finished'||!host;$('cat-reset').disabled=busy||!connected;
@@ -4644,10 +4672,10 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
    const info=cards[c];if(!info)return;const btn=document.createElement('button');btn.className='cat-card'+(selected.includes(index)?' selected':'');btn.dataset.index=index;decorateCard(btn,c);bindHover(btn,c);btn.setAttribute('aria-label',info[1]+' · Lá '+(index+1));
    const giving=isGiving(),reacting=state.pending?.phase==='reaction'&&(c==='nope'||own.cursed),blindDefuse=state.pending?.phase==='curse_defuse'&&state.pending.actor===state.me.id,now=c==='alter_now'&&!state.pending&&state.status==='playing';btn.disabled=busy||!connected||(comboMode&&!selected.includes(index)&&!comboFits([...selected,index]));
    if(comboMode){btn.setAttribute('aria-pressed',String(selected.includes(index)));btn.setAttribute('aria-label',info[1]+' · Lá '+(index+1));}
-   const icon=document.createElement('span');art(icon,c);icon.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=info[1];const hint=document.createElement('small');hint.textContent=kindLabels[cardKind(c)];const number=document.createElement('em');number.className='cat-card-number';number.textContent=index+1;btn.append(icon,name,hint,number);
+   const icon=document.createElement('span');art(icon,c);icon.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=handCardName(c);name.title=info[1];const hint=document.createElement('small');hint.textContent=kindLabels[cardKind(c)];const number=document.createElement('em');number.className='cat-card-number';number.textContent=index+1;btn.append(icon,name,hint,number);
    btn.onclick=()=>{if(busy)return;if(own.cursed&&!giving&&(myTurn||reacting||blindDefuse)){perform(blindDefuse?'defuse_blind':'blind',{index});return;}if(!comboMode){inspected={card:c,index};renderInspector();return;}if(selected.includes(index))selected=selected.filter(i=>i!==index);else if(selected.length<(comboFive?5:3)&&comboFits([...selected,index]))selected.push(index);else{$('cat-error').textContent='Chọn lá hợp lệ theo chế độ ghép đang bật.';return;}render();};$('cat-hand').append(btn);
   });
-  arrangeHand();renderHandControls();renderReady();renderGameSignals();updateTableClock();renderPublicPlays();renderCombo(myTurn);renderPending();renderInspector();renderEffects();animatePublicEvents();
+  arrangeHand();renderHandControls();renderReady();renderGameSignals();updateTableClock();updateTurnWarning();renderPublicPlays();renderCombo(myTurn);renderPending();renderInspector();renderEffects();animatePublicEvents();
   const privateResult=state.me.notice;$('cat-feedback').hidden=true;$('cat-feedback').textContent=privateResult==='combo_miss'?'Đối thủ không có lá bạn gọi. Ba lá đã dùng được bỏ đi.':privateResult&&cards[privateResult]?'Bạn đã lấy được: '+cards[privateResult][1]+'.':'';
   renderPeek();
  }
@@ -4723,7 +4751,7 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
  function renderSettings(){
   const box=$('cat-pack-settings');box.hidden=state.status!=='waiting';document.querySelectorAll('[data-cat-pack]').forEach(el=>{el.checked=(state.packs||[]).includes(el.dataset.catPack);el.disabled=busy||!connected||state.me.id!==state.host||state.rulesVersion<5;});
  }
- function renderInspector(){
+ function renderInspectorContents(){
   const box=$('cat-inspector');box.hidden=!inspected||comboMode||!state;if(box.hidden)return;
   const c=inspected.card;decorateCard(box,c);art($('cat-inspect-art'),c);$('cat-inspect-title').textContent=cards[c][1];$('cat-inspect-help').textContent=cards[c][2];
   const giving=isGiving(),reacting=state.pending?.phase==='reaction',normal=state.status==='playing'&&!state.pending&&(state.turn===state.me.index||c==='alter_now');
@@ -4732,7 +4760,7 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
   const comboCard=c.startsWith('cat_')||c==='feral';$('cat-use-card').textContent=!giving&&comboCard?'Ghép đôi / bộ ba với lá này':giving?'Góp lá này':c==='nope'?'NOPE! Chặn hành động':'Dùng lá này';
   $('cat-action-status').textContent=state.rulesVersion<5?'Máy chủ đang dùng luật cũ. Chạy SQL v5 để khớp giao diện.':giving?'Chọn Góp lá này để xác nhận.':!state.players[state.me.index].alive?'Bạn đã bị loại khỏi ván.':state.players[state.me.index].cursed?'Bạn đang bị nguyền: chọn lá úp trên tay để dùng mù.':c==='defuse'?'Gỡ bom được dùng tự động khi gặp bom, không đánh riêng.':c==='streak'?'Giữ trên tay để bảo vệ; không cần bấm dùng.':c==='nope'&&!reacting?'Nope chỉ dùng khi đang có cửa sổ phản ứng.':!normal&&!(reacting&&c==='nope')?'Chờ đến lượt của bạn và xử lý xong hành động đang chờ.':!giving&&needsTarget(c)&&!$('cat-favor-target').value?'Chọn đối thủ phía trên để bật nút dùng bài.':comboCard?'Bấm ghép bộ, chọn 2 hoặc 3 lá và chọn đối thủ.':'';$('cat-use-card').disabled=busy||!connected||!state.players[state.me.index].alive||(!giving&&state.players[state.me.index].cursed)||(!giving&&!(reacting&&c==='nope')&&!(normal&&(playable.includes(c)||comboCard)))||(!giving&&needsTarget(c)&&!$('cat-favor-target').value);
  }
- function renderPending(){
+ function renderPendingContents(){
   const p=state.pending;$('cat-pending').hidden=!p;if(!p)return;
   const name=id=>state.players.find(x=>x.id===id)?.name||'Người chơi',mine=p.actor===state.me.id;
   const titles={reaction:(p.nopes||0)%2?'NOPE! Hành động đang bị chặn':'Cửa sổ phản ứng',favor:'Đang chờ cho bài',collection:p.card==='potluck'?'Góp tiệc theo chiều chơi':'Thu gom bài',order:'Sắp xếp tương lai',defuse:p.bury?'Chôn bài bí mật':p.implode?'Mèo Nổ Nội lật ngửa':'Đặt lại bài',curse_defuse:'Tìm Gỡ bom trong bài úp',blind:'Lá vừa lật: '+(cards[p.card]?.[1]||'')};
@@ -4879,7 +4907,7 @@ body.tn-cat-room-open #meono .cat-heading{display:none!important}body.tn-cat-roo
 /* Personal felt mat with unclipped raised cards. */
 #meono #cat-hand-zone{position:relative;overflow:visible!important;background:radial-gradient(ellipse at 50% 15%,#39665b,#1a4146 75%);border:2px solid #9e8b5d;border-radius:20px;padding:12px 14px 16px;box-shadow:inset 0 0 0 4px #102f36,inset 0 0 0 5px #c2ab6844,inset 0 0 40px #051c2855,0 5px 15px #0003;margin:3px 0 5px;isolation:isolate}#meono #cat-hand-zone:before{content:'';position:absolute;inset:9px;border:1px dashed #dabd7240;border-radius:12px;pointer-events:none;z-index:-1}#meono #cat-hand-zone .cat-hand-head{position:relative;z-index:1}#meono #cat-hand-zone .cat-combo-toolbar{right:14px;top:12px;z-index:2}#meono #cat-hand-zone #cat-hand-tip{color:#b8d0bf}#meono #cat-room #cat-hand,#meono #cat-room[data-status] #cat-hand{overflow:visible!important;max-height:none!important;z-index:3;margin-top:12px!important;padding:0!important}#meono #cat-hand .cat-card:hover,#meono #cat-hand .cat-card:focus-visible{z-index:300!important;box-shadow:0 0 0 2px #ffe09b,0 14px 25px #0008}#meono #cat-hand .cat-card.selected{z-index:200!important}#meono #cat-hand-zone .cat-hand-head h2{color:#ffe5a8}
 @media(max-width:760px){#meono #cat-hand-zone{padding:8px 9px 13px;border-radius:15px}#meono #cat-hand-zone:before{inset:6px;border-radius:10px}#meono #cat-hand-zone .cat-combo-toolbar{right:9px;top:8px}#meono #cat-room #cat-hand{margin-top:10px!important}}
-#cat-nav-edge,#cat-nav-reveal{display:none}body.cat-live-nav:has(#meono.active)>header{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;z-index:6000!important;transform:translateY(calc(-100% + 2px));transition:transform .22s ease;box-shadow:0 8px 24px #0006}body.cat-live-nav.cat-nav-open:has(#meono.active)>header,body.cat-live-nav:has(#meono.active)>header:focus-within{transform:translateY(0)}body.cat-live-nav:has(#meono.active)>#cat-nav-edge{display:block;position:fixed;top:0;left:0;right:0;height:9px;z-index:6001}body.cat-live-nav:has(#meono.active)>#cat-nav-reveal{display:block;position:fixed;top:5px;right:10px;z-index:6002;border:1px solid #9e8b5d;border-radius:7px;padding:4px 9px;background:#133b40e8;color:#ffe3a4;font:700 10px system-ui;cursor:pointer}body.cat-nav-open:has(#meono.active)>#cat-nav-reveal{top:auto;bottom:10px}#meono #cat-feedback{display:none!important}#meono #cat-room.cat-own-turn #cat-turn{color:#ffe494!important;text-shadow:0 0 12px #f6cf6aaa;font-size:20px!important;letter-spacing:.5px}#meono .cat-player.current{border-color:#ffdc78!important;background:linear-gradient(150deg,#786232,#3a543e)!important;box-shadow:0 0 0 2px #ffe28e55,0 0 19px #e7c66777!important}#meono .cat-player.current>b{color:#fff4c9;font-size:12px;text-shadow:0 0 8px #ffdf68}#meono .cat-player.current:before{content:'▶ ĐẾN LƯỢT';display:block;font:900 8px/1.5 system-ui;color:#ffdf78}#meono .cat-marked-player{border-color:#dc8577!important}#meono .cat-public-marks{margin-top:5px;border-top:1px solid #ffae8c66;padding-top:4px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px}#meono .cat-public-marks>b{width:100%;font:800 9px/1.4 system-ui;color:#ffb8a0}#meono .cat-mark-card{width:62px;min-height:0!important;padding:3px!important;border:1px solid #ffb389!important;border-radius:6px!important;background:#fff0d4!important;box-shadow:none!important;color:#423627!important}#meono .cat-mark-card .cat-art{width:43px;height:36px;margin:auto}#meono .cat-mark-card small{font:800 8px/1.2 system-ui!important;color:#423627!important;display:block;white-space:normal}#meono .cat-power-mark{border-color:#ffad89}#meono #cat-effect-rail>.cat-power{border-left:3px solid #ffd379;padding:4px 8px;background:#0c2735de}#meono #cat-effect-rail>.cat-power b{font-size:13px}#meono #cat-effect-rail>.cat-power>span.cat-power-art{width:36px;height:32px}
+#cat-nav-edge,#cat-nav-reveal{display:none}body.cat-live-nav:has(#meono.active)>header{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;z-index:6000!important;transform:translateY(calc(-100% + 2px));transition:transform .22s ease;box-shadow:0 8px 24px #0006}body.cat-live-nav.cat-nav-open:has(#meono.active)>header,body.cat-live-nav:has(#meono.active)>header:focus-within{transform:translateY(0)}body.cat-live-nav:has(#meono.active)>#cat-nav-edge{display:block;position:fixed;top:0;left:0;right:0;height:9px;z-index:6001}body.cat-live-nav:has(#meono.active) #cat-nav-reveal{display:block;position:fixed;top:5px;right:10px;z-index:6002;border:1px solid #9e8b5d;border-radius:7px;padding:4px 9px;background:#133b40e8;color:#ffe3a4;font:700 10px system-ui;cursor:pointer}body.cat-nav-open:has(#meono.active) #cat-nav-reveal{top:auto;bottom:10px}#meono #cat-feedback{display:none!important}#meono #cat-room.cat-own-turn #cat-turn{color:#ffe494!important;text-shadow:0 0 12px #f6cf6aaa;font-size:20px!important;letter-spacing:.5px}#meono .cat-player.current{border-color:#ffdc78!important;background:linear-gradient(150deg,#786232,#3a543e)!important;box-shadow:0 0 0 2px #ffe28e55,0 0 19px #e7c66777!important}#meono .cat-player.current>b{color:#fff4c9;font-size:12px;text-shadow:0 0 8px #ffdf68}#meono .cat-player.current:before{content:'▶ ĐẾN LƯỢT';display:block;font:900 8px/1.5 system-ui;color:#ffdf78}#meono .cat-marked-player{border-color:#dc8577!important}#meono .cat-public-marks{margin-top:5px;border-top:1px solid #ffae8c66;padding-top:4px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px}#meono .cat-public-marks>b{width:100%;font:800 9px/1.4 system-ui;color:#ffb8a0}#meono .cat-mark-card{width:62px;min-height:0!important;padding:3px!important;border:1px solid #ffb389!important;border-radius:6px!important;background:#fff0d4!important;box-shadow:none!important;color:#423627!important}#meono .cat-mark-card .cat-art{width:43px;height:36px;margin:auto}#meono .cat-mark-card small{font:800 8px/1.2 system-ui!important;color:#423627!important;display:block;white-space:normal}#meono .cat-power-mark{border-color:#ffad89}#meono #cat-effect-rail>.cat-power{border-left:3px solid #ffd379;padding:4px 8px;background:#0c2735de}#meono #cat-effect-rail>.cat-power b{font-size:13px}#meono #cat-effect-rail>.cat-power>span.cat-power-art{width:36px;height:32px}
 @media(max-width:760px){#meono #cat-room.cat-own-turn #cat-turn{font-size:16px!important}#meono .cat-player.current>b{font-size:10px}#meono .cat-mark-card{width:51px}#meono .cat-mark-card .cat-art{width:35px;height:29px}#meono .cat-public-marks>b{font-size:7px}#meono .cat-public-marks{max-height:110px;overflow:auto}#meono #cat-effect-rail>.cat-power b{font-size:10px}}@media(prefers-reduced-motion:reduce){body.cat-live-nav:has(#meono.active)>header{transition:none}}
 #meono .cat-public-marks{animation:cat-mark-reveal .55s ease-out}@keyframes cat-mark-reveal{0%{opacity:.3;box-shadow:0 0 0 2px #ffb28b;transform:scale(.85)}60%{opacity:1;box-shadow:0 0 18px #ffae8b88;transform:scale(1.05)}100%{transform:scale(1);box-shadow:none}}@media(prefers-reduced-motion:reduce){#meono .cat-public-marks{animation:none}}
 /* Actions and notices never participate in the table grid sizing. */
@@ -4961,4 +4989,33 @@ body.cat-touch-device.cat-live-nav:has(#meono.active)>#cat-nav-edge{display:none
 
 #meono #cat-hand.cat-layout-updating .cat-card{transition:none!important}
 #meono #cat-room .cat-player{max-width:none!important}
+/* Controls occupy their own row, never cover the dissolve action. */
+body.cat-live-nav:has(#meono.active) #cat-nav-reveal{position:static!important;inset:auto!important;transform:none!important;flex:0 0 auto;min-height:36px;padding:6px 10px;z-index:auto}
+#meono #cat-hand-zone .cat-hand-head{padding-right:0!important;display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+#meono #cat-hand-zone .cat-hand-head h2{margin-right:auto!important}
+#meono #cat-hand-zone .cat-combo-toolbar{position:static!important;margin:7px 0 0!important;justify-content:flex-end}
+#meono #cat-hand-view,#meono #cat-sort{min-height:36px;font-size:11px;padding:6px 9px}
+#meono #cat-hand.cat-grid-hand{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;padding:5px!important;height:auto!important;align-items:stretch}
+#meono #cat-hand.cat-grid-hand .cat-card{position:relative!important;inset:auto!important;transform:none!important;width:100%!important;height:158px!important;--card-h:158px;z-index:auto!important;min-width:0!important}
+#meono #cat-hand.cat-grid-hand .cat-card.selected{outline:3px solid #ffe195;box-shadow:0 0 15px #ffd77988}
+#meono #cat-hand .cat-card{box-sizing:border-box;display:grid!important;grid-template-rows:30px minmax(0,1fr) 12px;gap:3px!important}
+#meono #cat-hand .cat-card>b{grid-row:1;align-self:center;min-height:0!important;margin:0!important;padding:0 0 0 13px!important;line-height:1.1!important;font-size:10px!important;white-space:normal;overflow-wrap:anywhere}
+#meono #cat-hand .cat-card>.cat-art{grid-row:2;height:100%!important;width:100%;min-height:0;margin:0!important}
+#meono #cat-hand .cat-card>small{grid-row:3;margin:0!important;align-self:center;font-size:8px!important;line-height:1!important}
+#meono #cat-panel-toggle{position:absolute;right:8px;top:7px;z-index:49;min-height:34px;padding:5px 10px;font-size:11px;border:1px solid #b79f68;border-radius:9px;background:#183b44;color:#ffe6ac}
+#meono #cat-panel-toggle[hidden]{display:none!important}
+#meono .cat-table.cat-has-panels>#cat-action-dock,#meono .cat-table.cat-has-panels>#cat-inspector{top:46px!important;max-height:min(460px,52dvh)}
+#meono .cat-table.cat-panels-folded>#cat-action-dock,#meono .cat-table.cat-panels-folded>#cat-inspector{display:none!important}
+#meono #cat-time-warning{grid-column:2;margin:3px 0!important;padding:5px 8px;border:1px solid #e8b969;border-radius:7px;background:#624622;color:#fff0c7;font:700 11px/1.4 system-ui}
+#meono #cat-time-warning[hidden]{display:none!important}
+@media(max-width:760px){
+ #meono #cat-hand.cat-grid-hand{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ #meono #cat-hand.cat-grid-hand .cat-card{height:135px!important;--card-h:135px}
+ #meono #cat-hand .cat-card>b{font-size:10px!important}
+ #meono #cat-hand .cat-card-number{width:16px;height:16px;font-size:9px}
+ #meono .cat-table.cat-has-panels>#cat-action-dock,#meono .cat-table.cat-has-panels>#cat-inspector{max-height:45dvh}
+ #meono #cat-time-warning{font-size:10px}
+}
+#meono #cat-hand .cat-card{grid-template-columns:minmax(0,1fr)}
+#meono #cat-hand .cat-card>b,#meono #cat-hand .cat-card>.cat-art{box-sizing:border-box;max-width:100%;min-width:0}
 </style></body></html>
