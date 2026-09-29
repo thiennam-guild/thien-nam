@@ -4516,7 +4516,7 @@ const info=document.createElement('details');info.id='cat-room-info';const infoT
 const history=document.querySelector('#meono .cat-play-log');history.open=false;room.append(history);
 
  let comboFive=false;const normalCats=['cat_taco','cat_melon','cat_potato','cat_rainbow','cat_beard'];
- function comboFits(indices){if(comboFive){const a=indices.map(i=>state.me.hand[i]);return a.length<=5&&a.every(c=>normalCats.includes(c))&&new Set(a).size===a.length;}const chosen=indices.map(i=>state.me.hand[i]);if(chosen.length>3||chosen.some(c=>['bomb','implode','implode_up','unknown'].includes(c)))return false;const regular=chosen.filter(c=>c!=='feral');return regular.every(c=>c===regular[0])&&(!chosen.includes('feral')||regular.every(c=>c.startsWith('cat_')));}
+ function comboFits(indices){if(comboFive){const a=indices.map(i=>state.me.hand[i]);return a.length<=5&&a.every(c=>normalCats.includes(c))&&new Set(a).size===a.length;}const chosen=indices.map(i=>state.me.hand[i]);if(chosen.length>3||chosen.some(c=>!['cat_taco','cat_melon','cat_potato','cat_rainbow','cat_beard','feral'].includes(c)))return false;const regular=chosen.filter(c=>c!=='feral');return regular.every(c=>c===regular[0])&&(!chosen.includes('feral')||regular.every(c=>c.startsWith('cat_')));}
  const manage=document.createElement('details');manage.id='cat-manage';manage.innerHTML='<summary>Quản lý phòng</summary><p>Chủ phòng có thể kích người hoặc xóa phòng. Người mất kết nối quá 3 phút sẽ không được giữ khi mở ván mới.</p><select id="cat-kick-target" aria-label="Người cần kích"></select><button id="cat-kick" type="button">Kích người</button><button id="cat-delete" type="button">Xóa phòng</button><p id="cat-manage-help"></p>';$('cat-room-info').append(manage);
  function renderManage(){const host=state.me.id===state.host,supported=state.roomManagement;manage.hidden=!host;$('cat-delete').hidden=!host;options($('cat-kick-target'),[['','Chọn người'],...state.players.filter(p=>p.id!==state.me.id).map(p=>[p.id,p.name])]);$('cat-kick').disabled=busy||!supported||!$('cat-kick-target').value||!!state.pending;$('cat-delete').disabled=busy||!connected||!supported;$('cat-manage-help').textContent=!supported?'Cần chạy SQL v5.1 để quản lý phòng và giữ người online.':state.pending?'Có thể kích sau khi xử lý xong hành động đang chờ.':'';}
  $('cat-kick-target').onchange=renderManage;$('cat-kick').onclick=()=>{const name=$('cat-kick-target').selectedOptions[0]?.textContent;if(confirm('Kích '+name+' khỏi phòng?'))perform('kick',{target:$('cat-kick-target').value});};$('cat-delete').onclick=()=>{if(!busy&&confirm('Giải tán phòng này? Tất cả người chơi sẽ rời phòng và ván hiện tại sẽ kết thúc.'))perform('delete');};
@@ -4527,7 +4527,9 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
   [...$('cat-players').children].forEach((el,i)=>{if(!waiting)return;const badge=document.createElement('span');badge.className='cat-ready-badge';badge.textContent=state.players[i].id===state.host?'Chủ phòng':state.players[i].ready?'✓ Sẵn sàng':'Chưa sẵn sàng';el.append(badge);});
  }
  $('cat-ready').onclick=()=>perform('ready',{ready:!state.players[state.me.index].ready});
- function renderPeek(){const list=state.me.peek||[],box=$('cat-peek');box.hidden=!list.length;box.replaceChildren();if(!list.length)return;const title=document.createElement('b');title.textContent='🔮 Tiên tri · Chỉ bạn thấy';const help=document.createElement('p');help.textContent='Từ trái sang phải: lá 1 được rút trước. Rê chuột hoặc chạm để đọc.';const row=document.createElement('div');row.className='cat-peek-cards';list.forEach((c,i)=>{const button=document.createElement('button');button.type='button';button.className='cat-peek-card';decorateCard(button,c);const pos=document.createElement('small'),pic=document.createElement('span'),name=document.createElement('b');pos.textContent=(i+1)+(i===0?' · Trên cùng':'');art(pic,c);name.textContent=cards[c]?.[1]||c;button.append(pos,pic,name);button.setAttribute('aria-label','Tiên tri, lá '+(i+1)+': '+(cards[c]?.[1]||c));bindHover(button,c);button.onclick=()=>openPublicCard({actor:state.me.id,kind:'peek',cards:[c]});row.append(button);});box.append(title,help,row);}
+ let peekSignature='',peekDismissed=false;
+ const peekReopen=document.createElement('button');peekReopen.id='cat-peek-reopen';peekReopen.type='button';peekReopen.textContent='Xem lại Tiên tri';peekReopen.hidden=true;$('cat-hand-zone').querySelector('.cat-hand-head').append(peekReopen);peekReopen.onclick=()=>{peekDismissed=false;panelFolded=false;renderPeek();};
+ function renderPeek(){const list=state.me.peek||[],box=$('cat-peek');const signature=list.length?state.code+'|'+JSON.stringify(list):'';if(signature!==peekSignature){peekSignature=signature;peekDismissed=false;}const interrupted=!!state.pending;box.hidden=!list.length||peekDismissed||interrupted;peekReopen.hidden=!list.length||!peekDismissed||interrupted;box.replaceChildren();if(box.hidden){updatePanelFold();return;}const title=document.createElement('b');title.textContent='🔮 Tiên tri · Chỉ bạn thấy';const help=document.createElement('p');help.textContent='Từ trái sang phải: lá 1 được rút trước. Rê chuột hoặc chạm để đọc.';const row=document.createElement('div');row.className='cat-peek-cards';list.forEach((c,i)=>{const button=document.createElement('button');button.type='button';button.className='cat-peek-card';decorateCard(button,c);const pos=document.createElement('small'),pic=document.createElement('span'),name=document.createElement('b');pos.textContent=(i+1)+(i===0?' · Trên cùng':'');art(pic,c);name.textContent=cards[c]?.[1]||c;button.append(pos,pic,name);button.setAttribute('aria-label','Tiên tri, lá '+(i+1)+': '+(cards[c]?.[1]||c));bindHover(button,c);button.onclick=()=>openPublicCard({actor:state.me.id,kind:'peek',cards:[c]});row.append(button);});const close=document.createElement('button');close.id='cat-peek-close';close.type='button';close.textContent='Đóng Tiên tri ✕';close.onclick=()=>{peekDismissed=true;hideHover();renderPeek();};const heading=document.createElement('div');heading.className='cat-peek-heading';heading.append(title,close);box.append(heading,help,row);updatePanelFold();}
 
  function burstEffect(kind){
   if(document.hidden||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -4609,6 +4611,45 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
   const key=state.code+'|'+state.turnDeadline;if(own&&warnedTurn!==key){warnedTurn=key;playSound('yourturn');}
  }
 
+ const buildLabel=document.createElement('small');buildLabel.id='cat-build-label';buildLabel.textContent='v5.7';$('cat-room-code').after(buildLabel);
+
+ const guide=document.createElement('dialog');guide.id='cat-guidance';guide.setAttribute('aria-labelledby','cat-guidance-title');$('meono').append(guide);let guidePrompt='',seenPrompt='',noticeRoom='',seenReceipts=new Set();
+ function closeGuidance(){guidePrompt='';guide.close();setTimeout(updateGuidance,0);}
+ guide.addEventListener('click',e=>{if(e.target===guide){const r=guide.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeGuidance();}});
+ guide.addEventListener('cancel',()=>{guidePrompt='';setTimeout(updateGuidance,0);});
+ function showGuidance(title,message,items=[],action=null){
+  guide.replaceChildren();const close=document.createElement('button');close.type='button';close.className='cat-guidance-close';close.textContent='Đóng ✕';close.onclick=closeGuidance;const heading=document.createElement('h3');heading.id='cat-guidance-title';heading.textContent=title;const text=document.createElement('p');text.textContent=message;guide.append(close,heading,text);
+  for(const item of items){const row=document.createElement('div');row.className='cat-guidance-item';if(item.card&&cards[item.card]){const pic=document.createElement('span');art(pic,item.card);row.append(pic);}const label=document.createElement('span');label.textContent=item.text;row.append(label);guide.append(row);}
+  if(action){const choose=document.createElement('button');choose.type='button';choose.id='cat-guidance-action';choose.textContent=action.label;choose.onclick=()=>{closeGuidance();action.run();};guide.append(choose);}
+  const hint=document.createElement('small');hint.textContent='Chạm ra ngoài hoặc bấm Đóng để trở lại bàn.';guide.append(hint);if(!guide.open)guide.showModal();
+ }
+ function updateGuidance(){
+  if(!state){if(guide.open)guide.close();return;}
+  const room=state.code+'|'+state.me.id;if(room!==noticeRoom){noticeRoom=room;seenPrompt='';try{seenReceipts=new Set(JSON.parse(sessionStorage.getItem('cat.receipts.'+room)||'[]'));}catch{seenReceipts=new Set();}}
+  const p=state.pending,own=p&&(p.target===state.me.id&&['favor','collection'].includes(p.phase)||p.actor===state.me.id&&['defuse','curse_defuse','order','blind'].includes(p.phase));
+  const promptKey=own?[state.code,p.phase,p.actor,p.target,p.due].join('|'):'';
+  if(guidePrompt&&guidePrompt!==promptKey){guidePrompt='';guide.close();}
+  if(publicDialog.open)return;
+  if(own&&promptKey!==seenPrompt){seenPrompt=promptKey;guidePrompt=promptKey;const giving=['favor','collection'].includes(p.phase);const actor=state.players.find(x=>x.id===p.actor)?.name||'Người chơi';
+   const message=giving?(p.phase==='favor'?actor+' đang xin bạn 1 lá.':'Đến lượt bạn góp 1 lá cho '+(cards[p.card]?.[1]||'bộ bài')+'.')+' Chọn một lá trên tay rồi bấm Góp lá này để xác nhận.':p.phase==='defuse'?'Bạn cần chọn vị trí đặt lại lá bài. Mọi người phải chờ bước này hoàn tất mới được rút tiếp. Thời hạn tối đa 90 giây; xem số giây còn lại trên bảng. Hết giờ máy chủ tự đặt.':p.phase==='order'?'Sắp thứ tự các lá bằng nút lên/xuống, rồi xác nhận. Mọi người đang chờ bạn.':p.phase==='curse_defuse'?'Bạn đang bị nguyền. Chọn từng lá úp để tìm Gỡ bom.':'Lá úp vừa lật cần bạn chọn mục tiêu hoặc xác nhận dùng.';
+   showGuidance(giving?'Bạn cần góp bài':p.phase==='defuse'?'Chọn vị trí đặt bài':'Đến lượt bạn xử lý',message,[],{label:giving?'Chọn bài trên tay':'Mở phần xử lý',run:()=>{panelFolded=false;updatePanelFold();if(giving)$('cat-hand').scrollIntoView({block:'nearest',behavior:'smooth'});else $('cat-pending').scrollIntoView({block:'nearest',behavior:'smooth'});}});return;
+  }
+  if(guide.open||own)return;
+  const fresh=(state.me.feedback||[]).filter(x=>!seenReceipts.has(x.id));if(!fresh.length)return;
+  const items=fresh.map(x=>{seenReceipts.add(x.id);const name=cards[x.card]?.[1]||'1 lá bài',other=x.other||'đối phương';let text='';
+   if(x.kind==='received')text='Bạn nhận '+name+' từ '+other+'.';
+   else if(x.kind==='lost')text=other+' đã lấy '+name+' của bạn.';
+   else if(x.kind==='gave')text='Bạn đã cho '+other+' lá '+name+'.';
+   else if(x.kind==='contributed')text='Bạn đã góp '+name+' vào bộ bài.';
+   else if(x.kind==='recovered')text='Bạn lấy '+name+' từ chồng bài bỏ.';
+   else if(x.kind==='tower_lost')text=other+' lấy 1 lá từ Tháp của bạn; danh tính lá vẫn được giữ kín.';
+   else if(x.kind==='miss')text=other+' không có '+name+'. Bạn không nhận được bài.';
+   else if(x.kind==='targeted')text=other+' đã dùng '+name+' lên bạn. '+(x.card==='curse'?'Bài bị úp; hãy chọn mù trong lượt của bạn.':x.card==='mark'?'Một lá của bạn đã bị lộ, xem dưới tên trên bàn.':x.card==='take'?'Lá bạn rút tiếp theo sẽ chuyển cho người đó.':x.card==='bark'?'Bạn trúng Mèo Sủa: cần Gỡ bom để sống sót. Xem trạng thái trên bàn.':'Bạn cần hoàn thành '+state.debt+' lượt rút; có thể dùng bài hợp lệ để xử lý.');
+   return {card:x.card,text};});
+  try{sessionStorage.setItem('cat.receipts.'+room,JSON.stringify([...seenReceipts].slice(-64)));}catch{}
+  guidePrompt='';showGuidance('Kết quả hành động · Chỉ bạn thấy','',items);
+ }
+
  try{session=JSON.parse(localStorage.getItem(key));if(!session||!/^[a-f0-9-]{36}$/i.test(session.token)||!/^[A-F0-9]{8}$/.test(session.code))session=null;}catch{session=null;}
  function save(){try{if(session)localStorage.setItem(key,JSON.stringify(session));else localStorage.removeItem(key);}catch{$('cat-error').textContent='Trình duyệt không lưu được phiên. Giữ tab này mở để tiếp tục ván.';}}
  function active(){return $('meono').classList.contains('active')&&!document.hidden;}
@@ -4677,10 +4718,10 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
   });
   arrangeHand();renderHandControls();renderReady();renderGameSignals();updateTableClock();updateTurnWarning();renderPublicPlays();renderCombo(myTurn);renderPending();renderInspector();renderEffects();animatePublicEvents();
   const privateResult=state.me.notice;$('cat-feedback').hidden=true;$('cat-feedback').textContent=privateResult==='combo_miss'?'Đối thủ không có lá bạn gọi. Ba lá đã dùng được bỏ đi.':privateResult&&cards[privateResult]?'Bạn đã lấy được: '+cards[privateResult][1]+'.':'';
-  renderPeek();
+  renderPeek();updateGuidance();
  }
  function options(el,items){const signature=JSON.stringify(items);if(el.dataset.options===signature)return;const previous=el.value;el.replaceChildren();items.forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;el.append(option)});if(items.some(i=>i[0]===previous))el.value=previous;el.dataset.options=signature;}
- const comboPicker=document.createElement('label');comboPicker.className='cat-combo-mode-label';comboPicker.textContent='Cách ghép';const comboModeSelect=document.createElement('select');comboModeSelect.id='cat-combo-mode';comboModeSelect.setAttribute('aria-label','Cách ghép bộ bài');comboModeSelect.innerHTML='<option value="same">2 / 3 lá cùng loại · Lấy bài đối thủ</option><option value="five">5 Mèo thường khác loại · Lấy bài bỏ</option>';comboPicker.append(comboModeSelect);$('cat-combo-panel').prepend(comboPicker);
+ const comboPicker=document.createElement('label');comboPicker.className='cat-combo-mode-label';comboPicker.textContent='Cách ghép';const comboModeSelect=document.createElement('select');comboModeSelect.id='cat-combo-mode';comboModeSelect.setAttribute('aria-label','Cách ghép bộ bài');comboModeSelect.innerHTML='<option value="same">2 / 3 Mèo thường cùng loại · Lấy bài đối thủ</option><option value="five">5 Mèo thường khác loại · Lấy bài bỏ</option>';comboPicker.append(comboModeSelect);$('cat-combo-panel').prepend(comboPicker);
  comboModeSelect.onchange=()=>{if(busy)return;comboFive=comboModeSelect.value==='five';selected=[];inspected=null;render();};
  function renderCombo(myTurn){
   const supported=state.rulesVersion>=5,allowed=supported&&(!comboFive||state.fiveComboSupported);
@@ -4688,7 +4729,7 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
   $('cat-combo-panel').hidden=!comboMode;$('cat-combo-upgrade').hidden=supported;comboModeSelect.value=comboFive?'five':'same';comboModeSelect.disabled=busy||!myTurn;
   selected=selected.filter(i=>i<state.me.hand.length);if(!comboFits(selected))selected=[];
   const count=selected.length,chosen=selected.map(i=>state.me.hand[i]);
-  $('cat-combo-selection').textContent=count?'Đã chọn '+count+(comboFive?'/5':'')+' lá: '+chosen.map(c=>cards[c][1]).join(' · '):comboFive?'Chọn đủ 5 loại Mèo thường khác nhau. Không dùng Mèo Hoang.':'Chọn 2 hoặc 3 lá cùng loại trên tay.';
+  $('cat-combo-selection').textContent=count?'Đã chọn '+count+(comboFive?'/5':'')+' lá: '+chosen.map(c=>cards[c][1]).join(' · '):comboFive?'Chọn đủ 5 loại Mèo thường khác nhau. Không dùng Mèo Hoang.':'Chọn 2 hoặc 3 Mèo thường cùng loại trên tay.';
   const targets=state.players.filter(p=>p.id!==state.me.id&&p.alive&&(count===3||p.count>0));
   options($('cat-combo-target'),[['','Chọn đối thủ'],...targets.map(p=>[p.id,p.name+' · '+p.count+' lá'])]);
   const discard=state.discardCards||[],choices=comboFive?[...new Set(discard)].filter(c=>cards[c]):Object.keys(cards).filter(c=>!['unknown','implode','implode_up'].includes(c));
@@ -4788,7 +4829,7 @@ const history=document.querySelector('#meono .cat-play-log');history.open=false;
   updateCountdown();
  }
  function renderOrder(){const box=$('cat-order-list');box.replaceChildren();orderIndices.forEach((idx,pos)=>{const row=document.createElement('div');const pic=document.createElement('span');art(pic,state.pending.cards[idx]);const label=document.createElement('b');label.textContent=(pos+1)+'. '+(cards[state.pending.cards[idx]]?.[1]||'');row.append(pic,label);[-1,1].forEach(d=>{const b=document.createElement('button');b.textContent=d===-1?'↑':'↓';b.setAttribute('aria-label',(d===-1?'Đưa lên: ':'Đưa xuống: ')+label.textContent);b.disabled=busy||pos+d<0||pos+d>=orderIndices.length;b.onclick=()=>{[orderIndices[pos],orderIndices[pos+d]]=[orderIndices[pos+d],orderIndices[pos]];renderOrder();};row.append(b);});box.append(row);});$('cat-order-confirm').disabled=busy||!connected;}
- function updateCountdown(){const p=state?.pending;if(!p)return;const seconds=Math.max(0,Math.ceil((Date.parse(p.due)-Date.now())/1000));$('cat-pending-timer').textContent=seconds?seconds+' giây':'Đang giải quyết…';}
+ function updateCountdown(){const p=state?.pending;if(!p)return;const seconds=Math.max(0,Math.ceil((Date.parse(p.due)-Date.now()-serverClockOffset)/1000));$('cat-pending-timer').textContent=seconds?seconds+' giây':'Đang giải quyết…';}
  $('cat-favor-target').onchange=renderInspector;$('cat-inspect-close').onclick=()=>{inspected=null;renderInspector();};
  $('cat-use-card').onclick=()=>{if(!inspected||$('cat-use-card').disabled)return;const c=inspected.card;if(!isGiving()&&(c.startsWith('cat_')||c==='feral')){comboMode=true;comboFive=false;selected=[inspected.index];const match=state.me.hand.findIndex((x,i)=>i!==inspected.index&&(x===c||(c.startsWith('cat_')&&x==='feral')||(c==='feral'&&x.startsWith('cat_'))));inspected=null;render();return;}if(isGiving())perform(state.pending.phase==='favor'?'give':'contribute',{index:inspected.index});else if(c==='nope')perform('nope');else perform('card',{card:c,target:needsTarget(c)?$('cat-favor-target').value:undefined});inspected=null;};
  $('cat-order-confirm').onclick=()=>perform('order',{order:orderIndices});$('cat-blind-target').onchange=renderPending;$('cat-blind-confirm').onclick=()=>perform('resolve_blind',{target:$('cat-blind-target').value});$('cat-empty-defuse').onclick=()=>perform('defuse_blind',{index:0});
@@ -5019,15 +5060,52 @@ body.cat-live-nav:has(#meono.active) #cat-nav-reveal{position:static!important;i
 #meono #cat-hand .cat-card{grid-template-columns:minmax(0,1fr)}
 #meono #cat-hand .cat-card>b,#meono #cat-hand .cat-card>.cat-art{box-sizing:border-box;max-width:100%;min-width:0}
 /* Desktop: keep both piles beside the clock, leaving the right corner for action controls. */
-@media(min-width:1024px){
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] .cat-table{grid-template-columns:minmax(0,1fr) 100px minmax(180px,260px) 100px minmax(0,1fr);column-gap:12px}
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] .cat-piles>.cat-pile-side:first-child{grid-column:2;grid-row:1/5}
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] .cat-piles>.cat-pile-side:last-child{grid-column:4;grid-row:1/5}
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-turn,
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-note,
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-turn-metrics,
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-effect-rail,
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-wait,
- body:not(.cat-touch-device) #meono #cat-room[data-status="playing"] #cat-time-warning{grid-column:3}
+@media(min-width:761px){
+ #meono #cat-room[data-status="playing"] .cat-table{grid-template-columns:minmax(0,1fr) 100px minmax(180px,260px) 100px minmax(0,1fr);column-gap:12px}
+ #meono #cat-room[data-status="playing"] .cat-piles>.cat-pile-side:first-child{grid-column:2;grid-row:1/5}
+ #meono #cat-room[data-status="playing"] .cat-piles>.cat-pile-side:last-child{grid-column:4;grid-row:1/5}
+ #meono #cat-room[data-status="playing"] #cat-turn,
+ #meono #cat-room[data-status="playing"] #cat-note,
+ #meono #cat-room[data-status="playing"] #cat-turn-metrics,
+ #meono #cat-room[data-status="playing"] #cat-effect-rail,
+ #meono #cat-room[data-status="playing"] #cat-wait,
+ #meono #cat-room[data-status="playing"] #cat-time-warning{grid-column:3}
 }
+#meono #cat-peek[hidden],#meono #cat-peek-reopen[hidden]{display:none!important}
+#meono .cat-peek-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;top:0;background:#573c6b;z-index:1;padding-bottom:6px}
+#meono #cat-peek-close{flex:none;min-height:38px;padding:6px 9px;font:700 11px system-ui;border:1px solid #dbc795;border-radius:8px;background:#243e48;color:#fff0ca}
+#meono #cat-peek-reopen{min-height:36px;font-size:11px;padding:6px 9px}
+#meono #cat-build-label{display:inline-block;color:#a8c6c0;font:10px system-ui;margin-left:5px;white-space:nowrap}
+@media(min-width:761px) and (max-width:1100px){#meono #cat-room[data-status="playing"] .cat-table{padding-top:46px!important;grid-template-columns:minmax(0,1fr) 85px minmax(140px,220px) 85px minmax(0,1fr);column-gap:8px}}
+#meono #cat-guidance{position:fixed;inset:0;margin:auto;width:min(340px,calc(100vw - 36px));max-height:65dvh;overflow:auto;box-sizing:border-box;padding:16px;border:2px solid #c5a268;border-radius:16px;background:#173c47;color:#ffedc8;text-align:left;box-shadow:0 16px 55px #0009}
+#meono #cat-guidance::backdrop{background:#03141ba6}
+#meono #cat-guidance h3{font:800 17px/1.3 system-ui;margin:8px 0}
+#meono #cat-guidance p,#meono .cat-guidance-item{font:13px/1.5 system-ui}
+#meono #cat-guidance>small{display:block;font:10px/1.4 system-ui;color:#b1c9c5;margin-top:10px}
+#meono .cat-guidance-close{display:block;margin-left:auto;min-height:36px;padding:5px 10px}
+#meono #cat-guidance-action{width:100%;min-height:40px;margin-top:10px;background:#efce83;color:#243a3b}
+#meono .cat-guidance-item{display:flex;align-items:center;gap:9px;border-top:1px solid #799c9844;padding:8px 0}
+#meono .cat-guidance-item .cat-art{flex:none;width:48px;height:46px}
+@media(max-width:1100px),(pointer:coarse){
+ #meono #cat-hover{width:220px;max-width:calc(100vw - 30px);max-height:48dvh;padding:10px;border-radius:12px}
+ #meono #cat-hover #cat-hover-art{height:95px!important;width:100%!important}
+ #meono #cat-hover-name{font-size:15px!important}
+ #meono #cat-hover-help{font-size:11px!important;line-height:1.4!important}
+ #meono #cat-public-detail{width:min(300px,calc(100vw - 36px));max-height:65dvh;padding:12px}
+ #meono #cat-public-detail h3{font-size:15px;margin:6px 0}
+ #meono #cat-public-detail article{padding:9px;margin:8px 0}
+ #meono #cat-public-detail .cat-art{height:110px}
+ #meono #cat-public-detail h4{font-size:16px;margin:7px 0}
+ #meono #cat-public-detail p{font-size:12px;line-height:1.4;margin:7px 0}
+}
+body.cat-touch-device #meono #cat-hover{width:220px;max-width:calc(100vw - 30px);max-height:48dvh;padding:10px}
+body.cat-touch-device #meono #cat-hover #cat-hover-art{height:95px!important;width:100%!important}
+body.cat-touch-device #meono #cat-hover-name{font-size:15px!important}
+body.cat-touch-device #meono #cat-hover-help{font-size:11px!important;line-height:1.4!important}
+body.cat-touch-device #meono #cat-public-detail{width:min(300px,calc(100vw - 36px));max-height:65dvh;padding:12px}
+body.cat-touch-device #meono #cat-public-detail h3{font-size:15px;margin:6px 0}
+body.cat-touch-device #meono #cat-public-detail article{padding:9px;margin:8px 0}
+body.cat-touch-device #meono #cat-public-detail .cat-art{height:110px}
+body.cat-touch-device #meono #cat-public-detail h4{font-size:16px;margin:7px 0}
+body.cat-touch-device #meono #cat-public-detail p{font-size:12px;line-height:1.4;margin:7px 0}
 </style></body></html>
