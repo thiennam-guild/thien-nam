@@ -1979,7 +1979,7 @@ function save(){
 }
 
 async function loadRemoteState(){
-  if(!db || remoteLoadInProgress)return;
+  if(!db || remoteLoadInProgress || guildMemberEditSaving)return;
   remoteLoadInProgress=true;
   try{
     const [regRes,gmRes,teamRes,slotRes]=await Promise.all([
@@ -2421,7 +2421,7 @@ function renderAdminMembers(){
     <div class="actions" style="margin-top:10px"><button class="btn gold" type="button" onclick="addGuildMemberFromAdmin()">＋ Thêm thành viên</button></div>
     <div class="guild-admin-member-table-wrap" style="margin-top:12px">
       <table class="admin-table"><thead><tr><th>Tên thành viên</th><th>Vai trò</th><th>UID</th><th></th></tr></thead><tbody>
-      ${guildSorted.length?guildSorted.map(m=>`<tr><td><b>${escapeHtml(m.name)}</b></td><td>${escapeHtml(m.role||'DPS')}</td><td>${escapeHtml(m.uid||'Chưa có')}</td><td><button class="btn small blue" onclick="editGuildMember('${m.id}')">✏ Sửa</button> <button class="btn small red" onclick="deleteGuildMember('${m.id}')">Xóa</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">Chưa có thành viên bang hội.</td></tr>'}
+      ${guildSorted.length?guildSorted.map(m=>`<tr><td><b>${escapeHtml(m.name)}</b></td><td>${escapeHtml(m.role||'DPS')}</td><td>${escapeHtml(m.uid||'Chưa có')}</td><td><button class="btn small blue" data-edit-member="${escapeHtml(m.id)}">✏ Sửa</button> <button class="btn small red" onclick="deleteGuildMember('${m.id}')">Xóa</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">Chưa có thành viên bang hội.</td></tr>'}
       </tbody></table>
     </div>
   </div>
@@ -2555,16 +2555,68 @@ function renderGuildMembers(){
  if(adminBox)adminBox.style.display=adminSession?'block':'none';
  const syncButton=$('guildDiscordSyncBtn'); if(syncButton)syncButton.hidden=!adminSession;
  $('guildMemberCount').textContent=guildMembers.length;
- list.innerHTML=filtered.length?filtered.map((m,i)=>{const role=String(m.role||'DPS');const roleClass='guild-role-'+role.trim().toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');return `<div class="admin-team-card guild-member-row" style="margin:0"><div class="guild-member-face"><span class="guild-member-frame-art" aria-hidden="true"></span><div class="guild-member-content"><span class="guild-member-kicker">THIÊN NAM</span><div class="guild-member-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</div><div class="guild-member-role ${roleClass}">${escapeHtml(role)}</div>${adminSession?`<div class="guild-member-uid">UID: ${escapeHtml(m.uid||'Chưa có')}</div>`:''}</div></div>${adminSession?`<div class="actions guild-member-actions"><button class="btn small" onclick="editGuildMember('${m.id}')">✏ Sửa</button><button class="btn small red" onclick="deleteGuildMember('${m.id}')">Xóa</button></div>`:''}</div>`}).join(''):'<div class="sub">Chưa có thành viên bang hội.</div>';
+ list.innerHTML=filtered.length?filtered.map((m,i)=>{const role=String(m.role||'DPS');const roleClass='guild-role-'+role.trim().toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');return `<div class="admin-team-card guild-member-row" style="margin:0"><div class="guild-member-face"><span class="guild-member-frame-art" aria-hidden="true"></span><div class="guild-member-content"><span class="guild-member-kicker">THIÊN NAM</span><div class="guild-member-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</div><div class="guild-member-role ${roleClass}">${escapeHtml(role)}</div>${adminSession?`<div class="guild-member-uid">UID: ${escapeHtml(m.uid||'Chưa có')}</div>`:''}</div></div>${adminSession?`<div class="actions guild-member-actions"><button class="btn small" data-edit-member="${escapeHtml(m.id)}">✏ Sửa</button><button class="btn small red" onclick="deleteGuildMember('${m.id}')">Xóa</button></div>`:''}</div>`}).join(''):'<div class="sub">Chưa có thành viên bang hội.</div>';
 }
 function addGuildMember(){
  if(!adminSession)return; const name=$('guildNameInput').value.trim(), uid=$('guildUidInput').value.trim(), role=$('guildRoleInput').value; if(!name){toast('Nhập tên thành viên');return}
  if(guildMembers.some(m=>m.name.toLowerCase()===name.toLowerCase())){toast('Thành viên đã tồn tại');return}
  guildMembers.push({id:'gm-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name,uid,role}); save(); renderAll(); renderGuildMembers(); toast('Đã thêm '+name+' vào Thành Viên Bang Hội'); $('guildNameInput').value=''; $('guildUidInput').value='';
 }
-function editGuildMember(id){
- if(!adminSession)return; const m=guildMembers.find(x=>x.id===id); if(!m)return; const name=prompt('Tên thành viên:',m.name); if(name===null)return; const uid=prompt('UID (chỉ Admin):',m.uid||''); if(uid===null)return; const role=prompt('Vai trò:',m.role||'DPS'); if(role===null)return; m.name=name.trim()||m.name; m.uid=uid.trim(); m.role=role.trim()||m.role; Object.keys(rostersByDay).forEach(day=>Object.values(rostersByDay[day]||{}).forEach(arr=>(arr||[]).forEach(p=>{if(p&&p.guildMemberId===m.id){p.name=m.name;p.role=m.role}}))); roster=rostersByDay[formationDay]||{}; saveFormationDayState(); save(); renderAll(); renderGuildMembers(); toast('Đã cập nhật thành viên');
+let guildMemberEditSaving=false;
+function closeGuildMemberEditor(){
+ if(guildMemberEditSaving)return;
+ const modal=$('guildMemberEditModal');modal?.remove();
+ const id=modal?.dataset.memberId;
+ const button=[...document.querySelectorAll('[data-edit-member]')].find(b=>b.dataset.editMember===id);
+ button?.focus();
 }
+function editGuildMember(id){
+ if(!adminSession||guildMemberEditSaving)return;
+ const m=guildMembers.find(x=>String(x.id)===String(id));if(!m)return;
+ $('guildMemberEditModal')?.remove();
+ const modal=document.createElement('div');modal.id='guildMemberEditModal';modal.className='modal show';modal.dataset.memberId=String(id);
+ modal.innerHTML=`<div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="guildEditTitle"><h2 id="guildEditTitle">Sửa thành viên</h2><form id="guildMemberEditForm"><div class="field"><label for="guildEditName">Tên nhân vật</label><input id="guildEditName" required maxlength="40" autocomplete="off"></div><div class="field"><label for="guildEditUid">UID</label><input id="guildEditUid" maxlength="60" autocomplete="off"></div><div class="field"><label for="guildEditRole">Vai trò</label><select id="guildEditRole"></select></div><label class="guild-edit-lock"><input type="checkbox" id="guildEditLock" checked><span>Giữ bản sửa trên web khi Discord đồng bộ</span></label><p class="sub">Bỏ chọn để lần đồng bộ tiếp theo cập nhật lại từ Discord.</p><p id="guildEditStatus" role="status" aria-live="polite"></p><div class="actions"><button class="btn gold" id="guildEditSave" type="submit">Lưu thay đổi</button><button class="btn" id="guildEditCancel" type="button">Hủy</button></div></form></div>`;
+ document.body.appendChild(modal);
+ $('guildEditName').value=m.name||'';$('guildEditUid').value=m.uid||'';
+ $('guildEditRole').innerHTML=$('guildRoleInput').innerHTML;
+ if(![...$('guildEditRole').options].some(o=>o.value===(m.role||'Flex'))){const o=new Option(m.role,m.role);$('guildEditRole').add(o);}
+ $('guildEditRole').value=m.role||'Flex';
+ $('guildEditCancel').onclick=closeGuildMemberEditor;
+ modal.addEventListener('click',e=>{if(e.target===modal)closeGuildMemberEditor();});
+ modal.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();closeGuildMemberEditor();}
+  if(e.key==='Tab'){const nodes=[...modal.querySelectorAll('input,select,button')].filter(el=>!el.disabled);const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+ });
+ $('guildMemberEditForm').onsubmit=async e=>{
+  e.preventDefault();if(!adminSession||guildMemberEditSaving)return;
+  const current=guildMembers.find(x=>String(x.id)===String(id));if(!current){$('guildEditStatus').textContent='Thành viên không còn trong danh sách.';return;}
+  const name=$('guildEditName').value.trim();if(!name){$('guildEditName').focus();return;}
+  const next={...current,name,uid:$('guildEditUid').value.trim(),role:$('guildEditRole').value,source:$('guildEditLock').checked?'manual':(current.discordUserId||current.discord_user_id||current.source==='discord'?'discord':'manual')};
+  guildMemberEditSaving=true;$('guildEditSave').disabled=true;$('guildEditCancel').disabled=true;$('guildEditStatus').textContent='Đang lưu…';
+  try{
+   // Finish an existing save/load before committing this member, so stale state cannot replace the edit.
+   const waitUntil=Date.now()+15000;
+   while(remoteWriteInProgress||remoteLoadInProgress){if(Date.now()>waitUntil)throw Error('Hệ thống đang bận đồng bộ. Vui lòng thử lưu lại.');await new Promise(resolve=>setTimeout(resolve,50));}
+   if(!adminSession)throw Error('Phiên Admin đã kết thúc. Hãy đăng nhập lại.');
+   if(db){
+    const row={id:String(next.id),name:next.name,uid:next.uid||null,role:next.role,source:next.source,discord_channel_id:next.discordChannelId||DISCORD_GUILD_CHANNEL_ID,discord_user_id:next.discordUserId||next.discord_user_id||null,username:next.username||null,updated_at:new Date().toISOString()};
+    const result=await db.from('tn_guild_members').upsert(row,{onConflict:'id'}).select('id');
+    if(result.error)throw Error('Chưa lưu được lên hệ thống. Vui lòng thử lại.');
+    if(!result.data?.some(r=>String(r.id)===String(next.id)))throw Error('Hệ thống chưa xác nhận lưu. Vui lòng thử lại.');
+   }
+   const member=guildMembers.find(x=>String(x.id)===String(id));
+   if(!member)throw Error('Thành viên đã bị xóa. Hãy tải lại danh sách.');
+   Object.assign(member,next);
+   Object.values(rostersByDay).forEach(day=>Object.values(day||{}).forEach(arr=>(arr||[]).forEach(p=>{if(p&&String(p.guildMemberId)===String(id)){p.name=next.name;p.role=next.role;}})));
+   roster=rostersByDay[formationDay]||{};save();renderAll();if($('adminModal')?.classList.contains('show'))renderAdmin();
+   guildMemberEditSaving=false;closeGuildMemberEditor();toast(db?'Đã lưu thay đổi thành viên':'Đã lưu trên thiết bị này; chưa kết nối lưu online');
+  }catch(error){$('guildEditStatus').textContent=error.message||'Chưa lưu được. Vui lòng thử lại.';}
+  finally{guildMemberEditSaving=false;if($('guildEditSave'))$('guildEditSave').disabled=false;if($('guildEditCancel'))$('guildEditCancel').disabled=false;}
+ };
+ $('guildEditName').focus();
+}
+
+document.addEventListener('click',e=>{const button=e.target.closest('[data-edit-member]');if(button)editGuildMember(button.dataset.editMember);});
 function deleteGuildMember(id){
  if(!adminSession)return; const m=guildMembers.find(x=>x.id===id); if(!m)return; const assigned=Object.values(rostersByDay).flatMap(day=>Object.values(day||{}).flat()).filter(p=>p&&p.guildMemberId===id); if(assigned.length){if(!confirm(m.name+' đang ở đội hình. Xóa sẽ đưa người này về chờ xếp. Tiếp tục?'))return; Object.keys(rostersByDay).forEach(day=>Object.keys(rostersByDay[day]||{}).forEach(tid=>{rostersByDay[day][tid]=(rostersByDay[day][tid]||[]).map(p=>p&&p.guildMemberId===id?null:p)}));} else if(!confirm('Xóa '+m.name+' khỏi danh sách bang hội?'))return; roster=rostersByDay[formationDay]||{}; guildMembers=guildMembers.filter(x=>x.id!==id); saveFormationDayState(); save(); renderAll(); renderGuildMembers(); toast('Đã xóa thành viên bang hội');
 }
@@ -2654,10 +2706,12 @@ function mergeDiscordGuildMembers(items){
     if(!name)return;
 
     // Stable identities allow a corrected ingame name to update the same member.
-    const existing=(uid&&guildMembers.find(m=>normalize(m.uid)===uid)) ||
-                   (discordUserId&&guildMembers.find(m=>normalize(m.discordUserId||m.discord_user_id)===discordUserId)) ||
+    const existing=(discordUserId&&guildMembers.find(m=>normalize(m.discordUserId||m.discord_user_id)===discordUserId)) ||
+                   (uid&&guildMembers.find(m=>normalize(m.uid)===uid)) ||
                    guildMembers.find(m=>normalize(m.name).toLowerCase()===name.toLowerCase());
     if(existing){
+      // Manual/Admin changes persist through the existing source column.
+      if(existing.source==='manual')return;
       const before=JSON.stringify(existing);
       existing.name=name;
       if(uid)existing.uid=uid;
@@ -2678,7 +2732,7 @@ function mergeDiscordGuildMembers(items){
 }
 
 async function syncGuildMembersFromDiscord(manual=false){
-  if(discordGuildSyncBusy)return;
+  if(discordGuildSyncBusy||guildMemberEditSaving)return;
   discordGuildSyncBusy=true;
   const btn=$('guildDiscordSyncBtn');
   if(btn)btn.disabled=true;
@@ -2692,6 +2746,7 @@ async function syncGuildMembersFromDiscord(manual=false){
     const items=Array.isArray(payload)?payload:(payload.members||payload.data||[]);
     if(!Array.isArray(items))throw new Error('API không trả về danh sách thành viên');
 
+    if(guildMemberEditSaving)return;
     const changed=mergeDiscordGuildMembers(items);
     if(changed){
       save();
@@ -5253,4 +5308,6 @@ html body main #teams .tn-jade-registration-submit{display:inline-flex!important
 html body main #teams .tn-jade-registration-submit .tn-jade-sword-icon{width:30px;height:30px;flex-basis:30px;filter:none;}
 @media(max-width:760px){html body main #teams .tn-jade-registration-title{gap:8px!important;}html body main #teams .tn-jade-registration-title>.tn-jade-sword-icon{width:38px;height:38px;flex-basis:38px;}}
 </style>
+<style id="guild-member-editor-style">#guildMemberEditModal{z-index:10020!important;}#guildMemberEditModal .modal-box{max-width:460px;border-color:#b89959;background:#101d20;color:#e8dbc0;}#guildMemberEditModal h2{margin:0 0 18px;color:#ecd18c;}#guildMemberEditForm{display:grid;gap:12px;}#guildMemberEditForm .field label{display:block;margin-bottom:6px;}#guildMemberEditForm input:not([type=checkbox]),#guildMemberEditForm select{width:100%;min-height:44px;font-size:16px;}#guildMemberEditForm .guild-edit-lock{display:flex;align-items:flex-start;gap:9px;line-height:1.5;}#guildEditLock{width:18px;height:18px;flex:0 0 18px;margin-top:3px;accent-color:#d5b569;}#guildMemberEditForm .sub{margin:0;line-height:1.6;}#guildEditStatus{margin:0;color:#f0c795;line-height:1.5;}#guildMemberEditForm .actions{gap:9px;}#guildMemberEditForm button{min-height:44px;}#guildMemberEditForm button:disabled{opacity:.6;}</style>
+
 </body></html>
