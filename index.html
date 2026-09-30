@@ -2555,7 +2555,7 @@ function renderGuildMembers(){
  if(adminBox)adminBox.style.display=adminSession?'block':'none';
  const syncButton=$('guildDiscordSyncBtn'); if(syncButton)syncButton.hidden=!adminSession;
  $('guildMemberCount').textContent=guildMembers.length;
- list.innerHTML=filtered.length?filtered.map((m,i)=>{const role=String(m.role||'DPS');const roleClass='guild-role-'+role.trim().toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');return `<div class="admin-team-card guild-member-row" style="margin:0"><div class="guild-member-face"><span class="guild-member-frame-art" aria-hidden="true"></span><div class="guild-member-content"><span class="guild-member-kicker">THIÊN NAM</span><div class="guild-member-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</div><div class="guild-member-role ${roleClass}">${escapeHtml(role)}</div>${adminSession?`<div class="guild-member-uid">UID: ${escapeHtml(m.uid||'Chưa có')}</div>`:''}</div></div>${adminSession?`<div class="actions guild-member-actions"><button class="btn small" data-edit-member="${escapeHtml(m.id)}">✏ Sửa</button><button class="btn small red" onclick="deleteGuildMember('${m.id}')">Xóa</button></div>`:''}</div>`}).join(''):'<div class="sub">Chưa có thành viên bang hội.</div>';
+ list.innerHTML=filtered.length?filtered.map((m,i)=>{const role=String(m.role||'DPS');const roleClass='guild-role-'+role.trim().toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');return `<div class="admin-team-card guild-member-row" style="margin:0"><div class="guild-member-face" role="button" tabindex="0" data-member-message="${escapeHtml(m.id)}" aria-label="${escapeHtml('Xem ảnh và tin nhắn của '+m.name)}"><span class="guild-member-frame-art" aria-hidden="true"></span><div class="guild-member-content"><span class="guild-member-kicker">THIÊN NAM</span><div class="guild-member-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</div><div class="guild-member-role ${roleClass}">${escapeHtml(role)}</div>${adminSession?`<div class="guild-member-uid">UID: ${escapeHtml(m.uid||'Chưa có')}</div>`:''}</div></div>${adminSession?`<div class="actions guild-member-actions"><button class="btn small" data-edit-member="${escapeHtml(m.id)}">✏ Sửa</button><button class="btn small red" onclick="deleteGuildMember('${m.id}')">Xóa</button></div>`:''}</div>`}).join(''):'<div class="sub">Chưa có thành viên bang hội.</div>';
 }
 function addGuildMember(){
  if(!adminSession)return; const name=$('guildNameInput').value.trim(), uid=$('guildUidInput').value.trim(), role=$('guildRoleInput').value; if(!name){toast('Nhập tên thành viên');return}
@@ -2693,6 +2693,44 @@ function discordIngameName(item){
   return clean(item.name);
 }
 
+const guildDiscordMessageCache=readLocal('thiennam_discord_message_cache',{});
+function guildDiscordImageUrl(value){
+ try{const u=new URL(String(value||''));if(u.protocol!=='https:')return '';if(!['cdn.discordapp.com','media.discordapp.net'].includes(u.hostname))return '';return u.href;}catch{return '';}
+}
+function cacheGuildDiscordMessage(item,member){
+ const key=String(member.id);const raw=item.rawContent??item.raw_content??item.content??item.message?.content;
+ const media=item.images??item.attachments??item.message?.attachments;
+ if(raw===undefined&&media===undefined)return;
+ const images=Array.isArray(media)?media.map(a=>({url:guildDiscordImageUrl(typeof a==='string'?a:a.url||a.proxy_url),name:typeof a==='string'?'Ảnh thành viên':String(a.filename||a.name||'Ảnh thành viên')})).filter(a=>a.url).slice(0,12):[];
+ guildDiscordMessageCache[key]={content:String(raw||''),images,messageId:String(item.messageId||item.message_id||''),channelId:String(item.channelId||item.channel_id||DISCORD_GUILD_CHANNEL_ID),guildId:String(item.guildId||item.guild_id||''),createdAt:item.createdAt||item.message_created_at||null,username:String(item.username||''),discordUserId:String(item.discordUserId||item.discord_user_id||member.discordUserId||'')};
+ try{localStorage.setItem('thiennam_discord_message_cache',JSON.stringify(guildDiscordMessageCache));}catch{}
+ if($('guildMemberMessageModal')?.dataset.memberId===key)renderGuildMemberMessage(member);
+}
+function closeGuildMemberMessage(){const modal=$('guildMemberMessageModal');const id=modal?.dataset.memberId;modal?.remove();[...document.querySelectorAll('[data-member-message]')].find(el=>el.dataset.memberMessage===id)?.focus();}
+function renderGuildMemberMessage(member){
+ const modal=$('guildMemberMessageModal');if(!modal)return;
+ const details=guildDiscordMessageCache[String(member.id)];
+ $('guildMessageTitle').textContent=member.name||'Thành viên';
+ $('guildMessageMeta').textContent=details?.createdAt&&Number.isFinite(Date.parse(details.createdAt))?'Tin nhắn Discord · '+new Date(details.createdAt).toLocaleString('vi-VN'):'Tin nhắn Discord';
+ $('guildMessageText').textContent=details?.content||'Chưa có nội dung tin nhắn Discord của thành viên này.';
+ const gallery=$('guildMessageGallery');gallery.replaceChildren();
+ for(const photo of details?.images||[]){const img=document.createElement('img');img.src=photo.url;img.alt=photo.name;img.loading='lazy';img.referrerPolicy='no-referrer';const box=document.createElement('div');box.className='guild-message-photo';box.appendChild(img);img.onerror=()=>{img.remove();const note=document.createElement('p');note.textContent='Ảnh chưa tải được. Bạn có thể xem trong Discord hoặc đồng bộ lại.';box.appendChild(note);};gallery.appendChild(box);}
+ $('guildMessageNoImages').hidden=!!details?.images?.length;
+ const link=$('guildMessageDiscordLink');const guild=details?.guildId,channel=details?.channelId,message=details?.messageId;
+ link.hidden=!(/^\d+$/.test(guild||'')&&/^\d+$/.test(channel||'')&&/^\d+$/.test(message||''));if(!link.hidden)link.href='https://discord.com/channels/'+guild+'/'+channel+'/'+message;
+}
+function openGuildMemberMessage(id){
+ const member=guildMembers.find(m=>String(m.id)===String(id));if(!member)return;
+ if($('guildMemberEditModal'))return;
+ $('guildMemberMessageModal')?.remove();const modal=document.createElement('div');modal.id='guildMemberMessageModal';modal.className='modal show';modal.dataset.memberId=String(id);
+ modal.innerHTML='<div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="guildMessageTitle"><div class="guild-message-heading"><h2 id="guildMessageTitle"></h2><button class="btn" id="guildMessageClose" aria-label="Đóng" type="button">✕</button></div><p class="sub" id="guildMessageMeta"></p><div id="guildMessageGallery"></div><p class="sub" id="guildMessageNoImages">Tin nhắn chưa có ảnh được đồng bộ.</p><h3>Nội dung đã gửi</h3><div id="guildMessageText"></div><a class="btn" id="guildMessageDiscordLink" target="_blank" rel="noopener noreferrer" hidden>Xem tin nhắn trên Discord</a></div>';
+ document.body.appendChild(modal);renderGuildMemberMessage(member);$('guildMessageClose').onclick=closeGuildMemberMessage;
+ modal.addEventListener('click',e=>{if(e.target===modal)closeGuildMemberMessage();});
+ modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeGuildMemberMessage();}if(e.key==='Tab'){const nodes=[...modal.querySelectorAll('button,a[href]')].filter(el=>!el.hidden);const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});$('guildMessageClose').focus();
+}
+document.addEventListener('click',e=>{const face=e.target.closest('[data-member-message]');if(face)openGuildMemberMessage(face.dataset.memberMessage);});
+document.addEventListener('keydown',e=>{const face=e.target.closest('[data-member-message]');if(face&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openGuildMemberMessage(face.dataset.memberMessage);}});
+
 function mergeDiscordGuildMembers(items){
   if(!Array.isArray(items))return 0;
   let changed=0;
@@ -2710,6 +2748,7 @@ function mergeDiscordGuildMembers(items){
                    (uid&&guildMembers.find(m=>normalize(m.uid)===uid)) ||
                    guildMembers.find(m=>normalize(m.name).toLowerCase()===name.toLowerCase());
     if(existing){
+      cacheGuildDiscordMessage(item,existing);
       // Manual/Admin changes persist through the existing source column.
       if(existing.source==='manual')return;
       const before=JSON.stringify(existing);
@@ -2725,6 +2764,7 @@ function mergeDiscordGuildMembers(items){
         ...(discordUserId?{discordUserId}:{}),
         discordChannelId:DISCORD_GUILD_CHANNEL_ID
       });
+      cacheGuildDiscordMessage(item,guildMembers[guildMembers.length-1]);
       changed++;
     }
   });
@@ -5310,4 +5350,5 @@ html body main #teams .tn-jade-registration-submit .tn-jade-sword-icon{width:30p
 </style>
 <style id="guild-member-editor-style">#guildMemberEditModal{z-index:10020!important;}#guildMemberEditModal .modal-box{max-width:460px;border-color:#b89959;background:#101d20;color:#e8dbc0;}#guildMemberEditModal h2{margin:0 0 18px;color:#ecd18c;}#guildMemberEditForm{display:grid;gap:12px;}#guildMemberEditForm .field label{display:block;margin-bottom:6px;}#guildMemberEditForm input:not([type=checkbox]),#guildMemberEditForm select{width:100%;min-height:44px;font-size:16px;}#guildMemberEditForm .guild-edit-lock{display:flex;align-items:flex-start;gap:9px;line-height:1.5;}#guildEditLock{width:18px;height:18px;flex:0 0 18px;margin-top:3px;accent-color:#d5b569;}#guildMemberEditForm .sub{margin:0;line-height:1.6;}#guildEditStatus{margin:0;color:#f0c795;line-height:1.5;}#guildMemberEditForm .actions{gap:9px;}#guildMemberEditForm button{min-height:44px;}#guildMemberEditForm button:disabled{opacity:.6;}</style>
 
+<style id="guild-member-message-style">#guildmembers .guild-member-face[role=button]{cursor:pointer;}#guildmembers .guild-member-face[role=button]:focus-visible{outline:2px solid #e8ce8a;outline-offset:3px;}#guildMemberMessageModal{z-index:10010!important;}#guildMemberMessageModal .modal-box{width:min(760px,100%);max-height:88dvh;overflow-y:auto;background:#102023;border-color:#aa905b;border-radius:16px;padding:22px;}#guildMemberMessageModal .guild-message-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;}#guildMessageTitle{margin:0;min-width:0;overflow-wrap:anywhere;color:#efdab0;}#guildMessageClose{flex:none;min-width:44px;min-height:44px;}#guildMessageGallery{display:grid;gap:12px;}#guildMessageGallery img{display:block;width:100%;max-height:60dvh;object-fit:contain;background:#071114;border-radius:9px;}#guildMessageText{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.75 'Be Vietnam Pro','Segoe UI',sans-serif;background:#081518;border:1px solid #a88e4b44;border-radius:9px;padding:14px;color:#e2dfd0;}#guildMessageDiscordLink{display:inline-flex;margin-top:16px;text-decoration:none;min-height:44px;}#guildMessageDiscordLink[hidden],#guildMessageNoImages[hidden]{display:none!important;}@media(max-width:760px){#guildMemberMessageModal .modal-box{padding:16px;}#guildMessageTitle{font-size:22px;}}</style>
 </body></html>
