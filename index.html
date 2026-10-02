@@ -1606,7 +1606,7 @@ body:has(#teams.active)::-webkit-scrollbar {
 <div class="section-title"><div><span class="guild-panel-kicker">THIÊN NAM · QUẦN HÙNG HỘI TỤ</span><h2>Thành Viên Bang Hội</h2><p class="sub">Danh sách thành viên chính thức của bang hội Thiên Nam.</p></div><span class="tag" id="guildMemberCount">0</span></div>
 <div id="guildMemberAdmin" class="card" style="padding:14px;margin-bottom:14px;display:none">
 <h3 style="margin-top:0;color:#ecd18c">⚙ Quản lý Thành Viên Bang Hội</h3>
-<div class="two"><div class="field"><label>Tên thành viên</label><input id="guildNameInput" maxlength="40" placeholder="Nhập tên nhân vật"></div><div class="field"><label>UID <span style="color:#8b93a0;font-size:11px">(chỉ Admin)</span></label><input id="guildUidInput" maxlength="60" placeholder="Nhập UID"></div><div class="field"><label>Võ học</label><select id="guildRoleInput"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option>Flex</option></select></div></div>
+<div class="two"><div class="field"><label>Tên thành viên</label><input id="guildNameInput" maxlength="40" placeholder="Nhập tên nhân vật"></div><div class="field"><label>UID <span style="color:#8b93a0;font-size:11px">(chỉ Admin)</span></label><input id="guildUidInput" maxlength="60" placeholder="Nhập UID"></div><div class="field"><label>Vai trò</label><select id="guildRoleInput"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option>Flex</option></select></div></div>
 <div class="actions" style="margin-top:10px"><button class="btn gold" id="addGuildMemberBtn" type="button">＋ Thêm thành viên</button></div>
 </div>
 <div class="discord-sync-bar" id="guildDiscordSyncBar">
@@ -1703,7 +1703,7 @@ body:has(#teams.active)::-webkit-scrollbar {
   </select>
 </div>
 <div class="field">
-  <label>Võ học</label>
+  <label>Vai trò</label>
   <select id="role"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option value="Khác">Khác</option></select>
   <input id="customRole" maxlength="40" placeholder="Ví dụ: Vô danh, Cửu kiếm" style="display:none;margin-top:8px">
 </div>
@@ -1764,9 +1764,9 @@ body:has(#teams.active)::-webkit-scrollbar {
 <div class="modal" id="successModal"><div class="modal-box" style="width:min(420px,100%);text-align:center;cursor:pointer" title="Kích chuột để tắt"><h2 style="font-size:32px;color:#f3d58b">Đã Đăng Ký</h2></div></div>
 <div class="modal" id="hotkeys"><div class="modal-box"><h2>⌨ Phím tắt</h2><p class="sub">Dùng nhanh khi đang điều phối.</p><div class="message">O — Boss / Objective\n1 — Blue Tower\n2 — Red Tower\n3 — Blue Tree\n4 — Red Tree\n5 — Blue Goose\n6 — Red Goose\nCtrl+Z — Undo\nCtrl+Y — Redo\nEsc — Hủy công cụ</div><div class="actions" style="margin-top:12px"><button class="btn" onclick="document.getElementById('hotkeys').classList.remove('show')">Đóng</button></div></div></div>
 
-<dialog id="guildDetail" aria-labelledby="guildDetailName"><div class="guild-detail-head"><div><span>HỒ SƠ ĐỒNG MÔN</span><h2 id="guildDetailName"></h2><p id="guildDetailRole"></p></div><button class="btn" id="guildDetailClose" type="button">Đóng ✕</button></div><div id="guildDetailImages"></div><p id="guildDetailImageEmpty">Chưa có ảnh đính kèm từ thành viên.</p><details><summary>Mẫu gửi trên kênh Thành viên</summary><pre>IG: Tên nhân vật
+<dialog id="guildDetail" aria-labelledby="guildDetailName"><div class="guild-detail-head"><div><span>HỒ SƠ ĐỒNG MÔN</span><h2 id="guildDetailName"></h2><p id="guildDetailRole"></p></div><button class="btn" id="guildDetailClose" type="button">Đóng ✕</button></div><div class="actions"><button class="btn small" id="guildDetailRefresh" type="button">↻ Cập nhật từ kênh chat</button></div><p id="guildDetailSyncStatus" role="status"></p><div id="guildDetailImages"></div><pre id="guildDetailMessage"></pre><p id="guildDetailImageEmpty">Chưa có ảnh đính kèm từ thành viên.</p><details><summary>Mẫu gửi trên kênh Thành viên</summary><pre>IG: Tên nhân vật
 UID: Mã UID
-Võ học: Song Đao</pre><p>Đính kèm ảnh vào tin nhắn. Hỗ trợ tên không dấu và lỗi gõ nhỏ; tên quá khác hoặc ghi nhiều võ học sẽ dùng Flex để tránh đoán sai.</p></details><section id="guildDetailEdit" hidden><h3>Admin chỉnh sửa</h3><form id="guildDetailForm"><label>Tên thành viên<input id="guildEditName" maxlength="40" required></label><label>UID (chỉ admin)<input id="guildEditUid" maxlength="60"></label><label>Võ học<select id="guildEditRole"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option>Flex</option></select></label><button class="btn gold" id="guildEditSave" type="submit">Lưu chỉnh sửa</button><p id="guildEditStatus" role="status"></p></form></section></dialog><div class="modal" id="adminModal"><div class="modal-box" style="width:min(920px,100%)">
+Vai trò: Song Đao</pre><p>Đính kèm ảnh vào tin nhắn. Có thể viết Vai trò hoặc Võ học; hệ thống nhận cả hai. Hỗ trợ tên không dấu và lỗi gõ nhỏ.</p></details><section id="guildDetailEdit" hidden><h3>Admin chỉnh sửa</h3><form id="guildDetailForm"><label>Tên thành viên<input id="guildEditName" maxlength="40" required></label><label>UID (chỉ admin)<input id="guildEditUid" maxlength="60"></label><label>Vai trò<select id="guildEditRole"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option>Flex</option></select></label><button class="btn gold" id="guildEditSave" type="submit">Lưu chỉnh sửa</button><p id="guildEditStatus" role="status"></p></form></section></dialog><div class="modal" id="adminModal"><div class="modal-box" style="width:min(920px,100%)">
   <div class="section-title"><div><h2>🔐 Quản trị Thiên Nam</h2><p class="sub">Quản lý quyền Admin, đội hình và thay đổi thành viên.</p></div><button class="btn small" id="adminClose">Đóng</button></div>
   <div id="adminLogin">
     <div class="card" style="margin-top:12px">
@@ -2059,7 +2059,7 @@ function renderTeams(){
   const dayName=formationDay==='SATURDAY'?'Thứ Bảy':'Chủ nhật';
   const renderGroup=(type,icon,title,desc)=>{
     const group=teams.filter(t=>String(t.type||'').toUpperCase()===type);
-    return `<div class="formation-column ${type==='CÔNG'?'attack-column':'defense-column'}"><div class="formation-column-head"><div class="formation-emblem">${icon}</div><div><h3>${title}</h3><p>${desc}</p></div><span>${group.reduce((n,t)=>n+(roster[t.id]||[]).filter(Boolean).length,0)}/${group.reduce((n,t)=>n+teamCapacity(t),0)}</span></div><div class="formation-teams">${group.map(t=>{let a=roster[t.id]||[];return `<div class="team" data-team="${t.id}"><div class="team-top"><strong>${escapeHtml(t.icon)} ${escapeHtml(t.name)}</strong><small>${a.filter(Boolean).length}/${teamCapacity(t)}</small></div><div class="bar"><i style="width:${Math.min(100,a.filter(Boolean).length/teamCapacity(t)*100)}%"></i></div><div class="slots">${Array.from({length:teamCapacity(t)},(_,i)=>i+1).map(n=>{let p=a[n-1];return `<div class="slot ${p?'filled':''} ${p?'role-'+String(p.role||'Chưa chọn').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-'):''}" data-team="${t.id}" data-slot="${n}" ${adminSession?'draggable="true"':''}><div class="slot-number">${n}</div>${p?`<b class="slot-name">${escapeHtml(p.name)}</b><small class="slot-role">Võ học: ${escapeHtml(p.role||'Chưa chọn')}</small>`:`<span class="slot-empty">Trống</span>`}</div>`}).join('')}</div>${adminSession?`<div class="actions" style="margin-top:8px"><button class="btn small blue" onclick="openMoveForTeam('${t.id}')">🔄 Sắp xếp</button><button class="btn small" onclick="editTeam('${t.id}')">✏ Sửa</button></div>`:''}</div>`}).join('')}</div></div>`;
+    return `<div class="formation-column ${type==='CÔNG'?'attack-column':'defense-column'}"><div class="formation-column-head"><div class="formation-emblem">${icon}</div><div><h3>${title}</h3><p>${desc}</p></div><span>${group.reduce((n,t)=>n+(roster[t.id]||[]).filter(Boolean).length,0)}/${group.reduce((n,t)=>n+teamCapacity(t),0)}</span></div><div class="formation-teams">${group.map(t=>{let a=roster[t.id]||[];return `<div class="team" data-team="${t.id}"><div class="team-top"><strong>${escapeHtml(t.icon)} ${escapeHtml(t.name)}</strong><small>${a.filter(Boolean).length}/${teamCapacity(t)}</small></div><div class="bar"><i style="width:${Math.min(100,a.filter(Boolean).length/teamCapacity(t)*100)}%"></i></div><div class="slots">${Array.from({length:teamCapacity(t)},(_,i)=>i+1).map(n=>{let p=a[n-1];return `<div class="slot ${p?'filled':''} ${p?'role-'+String(p.role||'Chưa chọn').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-'):''}" data-team="${t.id}" data-slot="${n}" ${adminSession?'draggable="true"':''}><div class="slot-number">${n}</div>${p?`<b class="slot-name">${escapeHtml(p.name)}</b><small class="slot-role">Vai trò cá nhân: ${escapeHtml(p.role||'Chưa chọn')}</small>`:`<span class="slot-empty">Trống</span>`}</div>`}).join('')}</div>${adminSession?`<div class="actions" style="margin-top:8px"><button class="btn small blue" onclick="openMoveForTeam('${t.id}')">🔄 Sắp xếp</button><button class="btn small" onclick="editTeam('${t.id}')">✏ Sửa</button></div>`:''}</div>`}).join('')}</div></div>`;
   };
   const satDate=new Date(); satDate.setDate(satDate.getDate()-((satDate.getDay()+1)%7));
   const sunDate=new Date(satDate); sunDate.setDate(satDate.getDate()+1);
@@ -2395,7 +2395,7 @@ function renderAdminMembers(){
     <div class="two" style="margin-top:10px">
       <div class="field"><label>Tên thành viên</label><input id="adminGuildNameInput" maxlength="40" placeholder="Nhập tên nhân vật"></div>
       <div class="field"><label>UID</label><input id="adminGuildUidInput" maxlength="60" placeholder="Nhập UID"></div>
-      <div class="field"><label>Võ học</label><select id="adminGuildRoleInput"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option>Flex</option></select></div>
+      <div class="field"><label>Vai trò</label><select id="adminGuildRoleInput"><option>DPS</option><option>Healer</option><option>Tanker</option><option>Song Đao</option><option>Vô Danh</option><option>Cửu Kiếm</option><option>Quạt Dù Ném</option><option>Quạt Dù Công</option><option>Quyền</option><option>Hoành Đao</option><option>Flex</option></select></div>
     </div>
     <div class="actions" style="margin-top:10px"><button class="btn gold" type="button" onclick="addGuildMemberFromAdmin()">＋ Thêm thành viên</button></div>
     <div class="guild-admin-member-table-wrap" style="margin-top:12px">
@@ -2582,16 +2582,14 @@ function updatePrivateAdminView(){
 $('addGuildMemberBtn')?.addEventListener('click',addGuildMember);
 
 let guildDetailId=null,guildDetailSaving=false;
-function guildSourceProfile(item){return {rawContent:String(item.rawContent??item.raw_content??''),images:Array.isArray(item.images)?item.images.slice(0,12):[],messageId:String(item.messageId??item.message_id??''),createdAt:item.createdAt??item.message_created_at??null};}
+function guildSourceProfile(item,previous={}){const raw=item.rawContent??item.raw_content??item.content??item.message?.content,media=item.images??item.attachments??item.message?.attachments;return {...previous,rawContent:raw===undefined?previous.rawContent||'':String(raw),images:Array.isArray(media)?media.slice(0,12):previous.images||[],messageId:String(item.messageId??item.message_id??previous.messageId??''),createdAt:item.createdAt??item.message_created_at??previous.createdAt??null};}
 function guildImageUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&['cdn.discordapp.com','media.discordapp.net'].includes(u.hostname)?u.href:'';}catch{return '';}}
 function showGuildMember(id,editing=false){
  const m=guildMembers.find(x=>String(x.id)===String(id));if(!m)return;
- guildDetailId=String(m.id);const modal=$('guildDetail');$('guildDetailName').textContent=m.name;$('guildDetailRole').textContent='Võ học: '+normalizeGuildRole(m.role);
- const images=$('guildDetailImages');images.replaceChildren();
- for(const entry of m.profile?.images||[]){const url=guildImageUrl(typeof entry==='string'?entry:entry.url);if(!url)continue;const image=document.createElement('img');image.src=url;image.alt=entry.filename||'Ảnh thành viên gửi';image.loading='lazy';image.onerror=()=>{image.replaceWith(Object.assign(document.createElement('p'),{textContent:'Ảnh Discord đã hết hạn hoặc không tải được. Hãy đồng bộ lại.'}));};images.append(image);}
- $('guildDetailImageEmpty').hidden=images.childElementCount>0;
+ guildDetailId=String(m.id);const modal=$('guildDetail');$('guildDetailName').textContent=m.name;$('guildDetailRole').textContent='Vai trò: '+normalizeGuildRole(m.role);
+ renderGuildDetailMedia();
  $('guildDetailEdit').hidden=!adminSession;$('guildEditName').value=m.name;$('guildEditUid').value=m.uid||'';$('guildEditRole').value=normalizeGuildRole(m.role);
- $('guildEditStatus').textContent='';$('guildEditSave').disabled=false;modal.showModal();if(editing&&adminSession)$('guildEditName').focus();
+ $('guildEditStatus').textContent='';$('guildEditSave').disabled=false;modal.showModal();if(editing&&adminSession)$('guildEditName').focus();else refreshGuildDetail();
 }
 async function saveGuildMemberDetail(){
  if(!adminSession||guildDetailSaving)return;const m=guildMembers.find(x=>String(x.id)===guildDetailId);if(!m)return;
@@ -2605,7 +2603,7 @@ async function saveGuildMemberDetail(){
   // A realtime refresh may have replaced the array while the request was in flight.
   const current=guildMembers.find(x=>String(x.id)===guildDetailId);if(current)Object.assign(current,next);else guildMembers.push(next);
   Object.values(rostersByDay).forEach(day=>Object.values(day||{}).forEach(arr=>(arr||[]).forEach(p=>{if(p&&String(p.guildMemberId)===guildDetailId){p.name=name;p.role=role;}})));
-  roster=rostersByDay[formationDay]||{};save();renderAll();if(adminSession)renderAdmin();$('guildDetailName').textContent=name;$('guildDetailRole').textContent='Võ học: '+role;
+  roster=rostersByDay[formationDay]||{};save();renderAll();if(adminSession)renderAdmin();$('guildDetailName').textContent=name;$('guildDetailRole').textContent='Vai trò: '+role;
   status.textContent=db?'Đã lưu online. Đồng bộ Discord sẽ giữ chỉnh sửa của admin.':'Đã lưu trên thiết bị này; chưa có kết nối online.';
  }catch(error){status.textContent='Chưa lưu được online: '+(error.message||'Lỗi kết nối')+'. Kiểm tra đã chạy SQL cập nhật Thành viên.';}
  finally{guildDetailSaving=false;$('guildEditSave').disabled=false;}
@@ -2614,6 +2612,16 @@ document.addEventListener('click',e=>{const row=e.target.closest('#guildMembersL
 document.addEventListener('keydown',e=>{const row=e.target.closest('#guildMembersList [data-guild-id]');if(row&&(e.key==='Enter'||e.key===' ')){e.preventDefault();showGuildMember(row.dataset.guildId);}});
 $('guildDetailClose').onclick=()=>$('guildDetail').close();$('guildDetail').onclick=e=>{if(e.target===$('guildDetail')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}};
 $('guildDetailForm').onsubmit=e=>{e.preventDefault();saveGuildMemberDetail();};
+
+function renderGuildDetailMedia(){const m=guildMembers.find(x=>String(x.id)===guildDetailId);if(!m)return;
+ const images=$('guildDetailImages');images.replaceChildren();
+ for(const entry of m.profile?.images||[]){const url=guildImageUrl(typeof entry==='string'?entry:entry.url||entry.proxy_url);if(!url)continue;const image=document.createElement('img');image.src=url;image.alt=entry.filename||'Ảnh thành viên gửi';image.loading='lazy';image.onerror=()=>{image.replaceWith(Object.assign(document.createElement('p'),{textContent:'Ảnh Discord đã hết hạn hoặc không tải được. Hãy đồng bộ lại.'}));};images.append(image);}
+ $('guildDetailImageEmpty').hidden=images.childElementCount>0;
+
+ $('guildDetailMessage').textContent=m.profile?.rawContent||'';$('guildDetailMessage').hidden=!m.profile?.rawContent;
+}
+async function refreshGuildDetail(){const status=$('guildDetailSyncStatus');if(discordGuildSyncBusy){status.textContent='Đang đồng bộ kênh chat…';return;}const id=guildDetailId;$('guildDetailRefresh').disabled=true;status.textContent='Đang lấy ảnh và tin nhắn từ kênh chat…';try{await syncGuildMembersFromDiscord(true);if(id!==guildDetailId)return;renderGuildDetailMedia();const m=guildMembers.find(x=>String(x.id)===id);status.textContent=$('guildDiscordSyncDot').classList.contains('error')?'Chưa kết nối được kênh chat. Kiểm tra hàm discord-members trong Supabase.':m?.profile?.rawContent||m?.profile?.images?.length?'Đã cập nhật từ kênh chat.':'Kênh chat chưa trả ảnh/tin nhắn cho thành viên này. Cần cập nhật hàm discord-members.';}finally{$('guildDetailRefresh').disabled=false;}}
+$('guildDetailRefresh').onclick=refreshGuildDetail;
 
 document.addEventListener('click',e=>{const edit=e.target.closest('[data-guild-edit]'),del=e.target.closest('[data-guild-delete]');if(edit)editGuildMember(edit.dataset.guildEdit);if(del)deleteGuildMember(del.dataset.guildDelete);});
 // ===== Discord → Thành Viên Bang Hội =====
@@ -2652,7 +2660,7 @@ function mergeDiscordGuildMembers(items){
   const name=String(item.name||item.ingame||item.characterName||'').trim();if(!name)continue;
   const uid=String(item.uid||item.UID||'').trim(),discordUserId=String(item.discordUserId||item.discord_user_id||'');
   const existing=(discordUserId&&guildMembers.find(m=>String(m.discordUserId||'')===discordUserId))||(uid&&guildMembers.find(m=>String(m.uid||'')===uid))||guildMembers.find(m=>String(m.name).trim().toLowerCase()===name.toLowerCase());
-  const incoming={name,uid,role:normalizeGuildRole(item.role||item.voHoc||item.võHọc||item.vaiTro||item.vaitro),source:'discord',discordUserId,discordChannelId:DISCORD_GUILD_CHANNEL_ID,username:item.username||'',profile:guildSourceProfile(item)};
+  const incoming={name,uid,role:normalizeGuildRole(item.role||item.voHoc||item.võHọc||item.vaiTro||item.vaitro),source:'discord',discordUserId,discordChannelId:DISCORD_GUILD_CHANNEL_ID,username:item.username||'',profile:guildSourceProfile(item,existing?.profile)};
   if(existing){const before=JSON.stringify(existing);Object.assign(existing,incoming,existing.adminOverrides||{});if(before!==JSON.stringify(existing))changed++;}
   else{guildMembers.push({id:'gm-discord-'+(discordUserId||Date.now()+'-'+Math.random().toString(36).slice(2,8)),...incoming});changed++;}
  }
@@ -2676,6 +2684,7 @@ async function syncGuildMembersFromDiscord(manual=false){
     if(!Array.isArray(items))throw new Error('API không trả về danh sách thành viên');
 
     const changed=mergeDiscordGuildMembers(items);
+    renderGuildDetailMedia();
     if(changed){
       save();
       renderAll();
